@@ -3,6 +3,7 @@ module github.com/selefra/selefra-terraform-provider-scaffolding
 go 1.18
 
 require (
+	github.com/PuerkitoBio/goquery v1.8.0
 	github.com/fatih/color v1.13.0
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/ivanpirog/coloredcobra v1.0.1
@@ -11,6 +12,7 @@ require (
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/viper v1.13.0
 	github.com/stretchr/testify v1.8.1
+	github.com/yezihack/colorlog v0.0.0-20190312024641-4717a40e9990
 )
 
 require (
@@ -19,7 +21,6 @@ require (
 	cloud.google.com/go/compute/metadata v0.2.1 // indirect
 	cloud.google.com/go/iam v0.7.0 // indirect
 	cloud.google.com/go/storage v1.28.0 // indirect
-	github.com/PuerkitoBio/goquery v1.8.0 // indirect
 	github.com/ThreeKing2018/gocolor v0.0.0-20190625094635-394e0e24c0d0 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/aws/aws-sdk-go v1.44.149 // indirect
@@ -70,7 +71,6 @@ require (
 	github.com/subosito/gotenv v1.4.1 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
-	github.com/yezihack/colorlog v0.0.0-20190312024641-4717a40e9990 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
