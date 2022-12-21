@@ -1,0 +1,22 @@
+selefra:
+  # In the case of the call, the url of the warehouse
+  module-name: "github.com/selefra/selefra-terraform-provider-aws"
+terraform:
+  provider:
+    # Which provider of the terraform is being converted
+    repo-url: "https://github.com/hashicorp/terraform-provider-aws"
+    # When initializing the provider, you may need to perform some configuration to start it. Configure this configuration here
+    config: ""
+    # terraform provider download link, usually have more than one
+#    execute-files:
+#      - provider-version: "4.47.0"
+#        download-url: "https://releases.hashicorp.com/terraform-provider-aws/4.47.0/terraform-provider-aws_4.47.0_darwin_amd64.zip"
+#        sha256-sum: ""
+#        arch: "amd64"
+#        os: "darwin"
+#    resources:
+#      - aws_redshift_endpoint_access
+#      - aws_acmpca_permission
+# Where to place the generated results
+output:
+  directory: "./selefra-terraform-provider-aws"
