@@ -191,6 +191,10 @@ func (x *TerraformProvider) ParseProviderName() string {
 	return x.providerName
 }
 
+func (x *TerraformProvider) ParseShortProviderName() string {
+	return strings.ReplaceAll(x.ParseProviderName(), "terraform-provider-", "")
+}
+
 // ------------------------------------------------- --------------------------------------------------------------------
 
 // Output Set output parameters

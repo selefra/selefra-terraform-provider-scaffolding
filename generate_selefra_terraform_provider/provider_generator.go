@@ -39,7 +39,7 @@ func (x *ProviderGenerator) genProvider() error {
 	}
 	buffer := bytes.Buffer{}
 	if err = t.ExecuteTemplate(&buffer, "provider", &RenderProviderParams{
-		TerraformProviderName:             x.config.Terraform.TerraformProvider.ParseProviderName(),
+		TerraformProviderName:             x.config.Terraform.TerraformProvider.ParseShortProviderName(),
 		GoModuleName:                      x.config.Selefra.ModuleName,
 		TerraformProviderExecuteFileSlice: x.config.Terraform.TerraformProvider.ExecuteFiles,
 	}); err != nil {
@@ -83,7 +83,7 @@ func (x *ProviderGenerator) genTestProvider() error {
 	}
 	buffer := bytes.Buffer{}
 	if err = t.ExecuteTemplate(&buffer, "test-provider", &RenderProviderParams{
-		TerraformProviderName:             x.config.Terraform.TerraformProvider.ParseProviderName(),
+		TerraformProviderName:             x.config.Terraform.TerraformProvider.ParseShortProviderName(),
 		GoModuleName:                      x.config.Selefra.ModuleName,
 		TerraformProviderExecuteFileSlice: x.config.Terraform.TerraformProvider.ExecuteFiles,
 	}); err != nil {

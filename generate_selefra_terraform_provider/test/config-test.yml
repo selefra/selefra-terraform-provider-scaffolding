@@ -26,4 +26,4 @@ terraform:
 #      - aws_acmpca_permission
 # Where to place the generated results
 output:
-  directory: "./selefra-terraform-provider-aws/"
+  directory: "./selefra-terraform-provider-azurerm/"
