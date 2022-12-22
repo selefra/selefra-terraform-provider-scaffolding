@@ -23,18 +23,19 @@ func (x *GoModGenerator) Run() error {
 }
 
 func (x *GoModGenerator) Render() error {
-	t, err := template.New("go-mod").Parse(string(provider_template.GoModTemplate))
+	t, err := template.New("go.mod").Parse(string(provider_template.GoModTemplate))
 	if err != nil {
 		return err
 	}
 	buffer := bytes.Buffer{}
 	params := &GoModRenderParams{
-		GoModuleName: x.config.Selefra.ModuleName,
+		ModuleName: x.config.Selefra.ModuleName,
 	}
-	if err = t.ExecuteTemplate(&buffer, "go-mod", params); err != nil {
+	if err = t.ExecuteTemplate(&buffer, "go.mod", params); err != nil {
 		return err
 	}
 
+	_ = os.MkdirAll(x.config.Output.Directory, os.ModePerm)
 	goModOutputPath := x.config.Output.Directory + "/go.mod"
 	if err := os.WriteFile(goModOutputPath, buffer.Bytes(), os.ModePerm); err != nil {
 		return err
@@ -44,5 +45,5 @@ func (x *GoModGenerator) Render() error {
 }
 
 type GoModRenderParams struct {
-	GoModuleName string
+	ModuleName string
 }

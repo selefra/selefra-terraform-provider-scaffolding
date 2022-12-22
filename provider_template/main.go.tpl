@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/selefra/selefra-provider-sdk/grpc/serve"
-	"{{ProviderModuleUrl}}/provider"
+	"{{.ModuleName}}/provider"
 )
 
 func main() {

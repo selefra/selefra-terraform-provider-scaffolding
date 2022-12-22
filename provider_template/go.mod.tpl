@@ -1,4 +1,4 @@
-module {{.GoModuleName}}
+module {{.ModuleName}}
 
 go 1.18
 

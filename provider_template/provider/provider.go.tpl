@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/selefra/selefra-provider-sdk/terraform/bridge"
 	terraform_providers "github.com/selefra/selefra-provider-sdk/terraform/provider"
-	"{{.GoModuleName}}/client"
+	"{{.ModuleName}}/client"
 
 	"github.com/selefra/selefra-provider-sdk/provider"
 	"github.com/selefra/selefra-provider-sdk/provider/schema"
@@ -15,7 +15,7 @@ const Version = "v0.0.1"
 
 func GetProvider() *provider.Provider {
 	return &provider.Provider{
-		Name:      "selefra-terraform-provider-{{.TerraformProviderName}}",
+		Name:      "selefra-terraform-provider-{{.TerraformProviderShortName}}",
 		Version:   Version,
 		TableList: GenTables(),
 		ClientMeta: schema.ClientMeta{

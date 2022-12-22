@@ -4,9 +4,9 @@ selefra:
 terraform:
   provider:
     # Which provider of the terraform is being converted
-    #    repo-url: "https://github.com/hashicorp/terraform-provider-aws"
+    repo-url: "https://github.com/hashicorp/terraform-provider-aws"
     #    repo-url: "https://github.com/Azure/terraform-provider-azapi"
-    repo-url: "https://github.com/hashicorp/terraform-provider-azurerm"
+    #    repo-url: "https://github.com/hashicorp/terraform-provider-azurerm"
     # When initializing the provider, you may need to perform some configuration to start it. Configure this configuration here
     #    config: |
     #      {
@@ -26,4 +26,4 @@ terraform:
 #      - aws_acmpca_permission
 # Where to place the generated results
 output:
-  directory: "./selefra-terraform-provider-azurerm/"
+  directory: "./selefra-terraform-provider-aws/"
