@@ -1,8 +1,6 @@
 package main
 
-import (
-	"github.com/selefra/selefra-terraform-provider-scaffolding/cmd"
-)
+import "github.com/selefra/selefra-terraform-provider-scaffolding/cmd"
 
 func main() {
 

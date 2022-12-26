@@ -13,10 +13,20 @@ func TestNewGenerateTerraformProvider(t *testing.T) {
 }
 
 func TestGenerator_Run(t *testing.T) {
-	configFilePath := "./test/config-test.yml"
-	provider, err := NewGenerateTerraformProvider(configFilePath)
+
+	// old test case
+	//configFilePath := "./test/config-test.yml"
+	//provider, err := NewGenerateTerraformProvider(configFilePath)
+	//assert.Nil(t, err)
+	//assert.NotNil(t, provider)
+	//err = provider.Run()
+	//assert.Nil(t, err)
+
+	terraformProviderUrl := "https://github.com/hashicorp/terraform-provider-aws"
+	provider, err := NewGenerateTerraformProviderFromTerraformProviderRepoUrl(terraformProviderUrl)
 	assert.Nil(t, err)
 	assert.NotNil(t, provider)
 	err = provider.Run()
 	assert.Nil(t, err)
+
 }

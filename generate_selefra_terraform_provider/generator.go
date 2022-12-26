@@ -48,13 +48,25 @@ func NewGenerateTerraformProvider(configFilePath string) (*Generator, error) {
 	}, nil
 }
 
+func NewGenerateTerraformProviderFromTerraformProviderRepoUrl(terraformProviderRepoUrl string) (*Generator, error) {
+	config := new(Config)
+	config.Terraform.TerraformProvider.RepoUrl = terraformProviderRepoUrl
+	if err := checkConfig(config); err != nil {
+		return nil, err
+	}
+
+	return &Generator{
+		config: config,
+	}, nil
+}
+
 func checkConfig(config *Config) error {
 
-	if config.Selefra.ModuleName == "" {
+	if config.Selefra.getOrAutoDetectModuleName() == "" {
 		return fmt.Errorf("selefra.module-name must set")
 	}
 
-	if config.Output.Directory == "" {
+	if config.Output.getDirectoryOrDefault() == "" {
 		return fmt.Errorf("output.directory must set")
 	}
 
@@ -85,7 +97,7 @@ func checkConfig(config *Config) error {
 	}
 
 	if len(config.Terraform.TerraformProvider.ExecuteFiles) == 0 {
-		return fmt.Errorf("It's a provider on github")
+		return fmt.Errorf("it's a provider on github")
 	}
 
 	return nil

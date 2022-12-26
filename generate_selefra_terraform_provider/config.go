@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/go-git/go-git/v5"
 	"github.com/selefra/selefra-provider-sdk/terraform/provider"
 	"github.com/yezihack/colorlog"
 	"math/rand"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 )
@@ -35,6 +37,83 @@ func (x *Config) IsResourceNeedGenerate(resourceName string) bool {
 type Selefra struct {
 	ModuleName string `mapstructure:"module-name"`
 }
+
+func (x *Selefra) getOrAutoDetectModuleName() string {
+	if x.ModuleName != "" {
+		return x.ModuleName
+	}
+	x.ModuleName = x.tryFindGitModuleNameFromGoMod()
+	if x.ModuleName == "" {
+		x.ModuleName = x.tryFindGitModuleNameFromLocalGitRepo()
+	}
+	return x.ModuleName
+}
+
+func (x *Selefra) tryFindGitModuleNameFromGoMod() string {
+	fileBytes, err := os.ReadFile("go.mod")
+	if err != nil {
+		fileBytes, err = os.ReadFile("../go.mod")
+	}
+	if err != nil {
+		return ""
+	}
+	split := strings.Split(string(fileBytes), "\n")
+	if len(split) < 1 {
+		return ""
+	}
+	split = strings.Split(split[0], " ")
+	if len(split) != 2 {
+		return ""
+	}
+	if strings.ToLower(split[0]) != "module" {
+		return ""
+	}
+
+	return split[1]
+}
+
+func (x *Selefra) tryFindGitModuleNameFromLocalGitRepo() string {
+	open, err := git.PlainOpen(".git")
+	if err != nil {
+		open, err = git.PlainOpen(".git")
+	}
+	if err != nil {
+		return ""
+	}
+	remotes, err := open.Remotes()
+	if err != nil {
+		return ""
+	}
+	for _, remote := range remotes {
+		for _, gitUrl := range remote.Config().URLs {
+			repoUrl := convertGitUrl(gitUrl)
+			if x.isOkGitRepoUrl(repoUrl) {
+				return repoUrl
+			}
+		}
+	}
+	return ""
+}
+
+func (x *Selefra) isOkGitRepoUrl(repoUrl string) bool {
+	if !strings.HasPrefix(strings.ToLower(repoUrl), "github.com/") {
+		return false
+	}
+	split := strings.Split(repoUrl, "/")
+	if len(split) != 3 {
+		return false
+	}
+	return true
+}
+
+func convertGitUrl(gitUrl string) string {
+	s := strings.ReplaceAll(gitUrl, "git@", "")
+	s = strings.ReplaceAll(s, ".git", "")
+	s = strings.ReplaceAll(s, ":", "/")
+	return s
+}
+
+// ------------------------------------------------- --------------------------------------------------------------------
 
 type Terraform struct {
 	TerraformProvider TerraformProvider `mapstructure:"provider"`
@@ -202,6 +281,13 @@ type Output struct {
 
 	// The directory to which the generated results are output
 	Directory string `mapstructure:"directory"`
+}
+
+func (x *Output) getDirectoryOrDefault() string {
+	if x.Directory == "" {
+		x.Directory = "./"
+	}
+	return x.Directory
 }
 
 // ------------------------------------------------- --------------------------------------------------------------------
