@@ -42,9 +42,9 @@ func (x *Selefra) getOrAutoDetectModuleName() string {
 	if x.ModuleName != "" {
 		return x.ModuleName
 	}
-	x.ModuleName = x.tryFindGitModuleNameFromGoMod()
+	x.ModuleName = x.tryFindGitModuleNameFromLocalGitRepo()
 	if x.ModuleName == "" {
-		x.ModuleName = x.tryFindGitModuleNameFromLocalGitRepo()
+		x.ModuleName = x.tryFindGitModuleNameFromGoMod()
 	}
 	return x.ModuleName
 }
