@@ -9,8 +9,8 @@ import (
 var terraformProviderRepoUrl string
 
 func init() {
-	generate.Flags().StringVarP(&terraformProviderRepoUrl, "url", "u", "", "provider's repository URL")
-	rootCmd.AddCommand(generate)
+	terraformProvider.Flags().StringVarP(&terraformProviderRepoUrl, "url", "u", "", "provider's repository URL")
+	rootCmd.AddCommand(terraformProvider)
 }
 
 var terraformProvider = &cobra.Command{
