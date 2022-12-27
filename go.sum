@@ -306,8 +306,8 @@ github.com/rogpeppe/go-internal v1.8.1 h1:geMPLpDpQOgVyCg5z5GoRwLHepNdb71NXb67XF
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/satori/go.uuid v1.2.0 h1:0uYX9dsZ2yD7q2RtLRtPSdGDWzjeM3TbMJP9utgA0ww=
 github.com/satori/go.uuid v1.2.0/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
-github.com/selefra/selefra-provider-sdk v0.0.15-0.20221214091032-960adc96e959 h1:Qpd8JrpiMmi9eHw1KY7VuqeZto+oHwEpsd6OismlTs0=
-github.com/selefra/selefra-provider-sdk v0.0.15-0.20221214091032-960adc96e959/go.mod h1:L3qgSQnkxmxwL+Z1Z5E1vXzOnaQljOK2xm53HRaWbdU=
+github.com/selefra/selefra-provider-sdk v0.0.16-0.20221227052011-b5008cd56951 h1:3njLASNxl3gBq7fPQZ13J+r2IwNRt99C/lH6nx7vZlw=
+github.com/selefra/selefra-provider-sdk v0.0.16-0.20221227052011-b5008cd56951/go.mod h1:L3qgSQnkxmxwL+Z1Z5E1vXzOnaQljOK2xm53HRaWbdU=
 github.com/selefra/selefra-utils v0.0.2 h1:Z3cAmMoTr6XePiZJakRmLVi7CvMjZ4ypt8TO73M03F0=
 github.com/selefra/selefra-utils v0.0.2/go.mod h1:LPY6RNU12IniRH3xz7yS7xF10YH3emQ6NWrn6UuBjEk=
 github.com/sergi/go-diff v1.1.0/go.mod h1:STckp+ISIX8hZLjrqAeVduY0gWCT9IjLuqbuNXdaHfM=

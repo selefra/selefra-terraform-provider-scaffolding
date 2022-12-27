@@ -9,7 +9,7 @@ require (
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/ivanpirog/coloredcobra v1.0.1
 	github.com/pulumi/pulumi-terraform-bridge/v3 v3.31.0
-	github.com/selefra/selefra-provider-sdk v0.0.15-0.20221214091032-960adc96e959
+	github.com/selefra/selefra-provider-sdk v0.0.16-0.20221227052011-b5008cd56951
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/viper v1.13.0
 	github.com/stretchr/testify v1.8.1
