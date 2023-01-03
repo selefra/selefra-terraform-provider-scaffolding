@@ -1,0 +1,196 @@
+package generate_selefra_terraform_provider
+
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"github.com/selefra/selefra-provider-sdk/terraform/provider"
+	"github.com/selefra/selefra-terraform-provider-scaffolding/provider_template/provider_template_v2_init"
+	"github.com/yezihack/colorlog"
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"golang.org/x/tools/go/ast/astutil"
+	"os"
+	"path"
+	"strings"
+	"text/template"
+)
+
+type SelefraTerraformProviderInit struct {
+	config          *Config
+	schemaIRManager *SchemaIRManager
+}
+
+func NewSelefraTerraformProviderInit(config *Config) *SelefraTerraformProviderInit {
+	return &SelefraTerraformProviderInit{
+		config:          config,
+		schemaIRManager: NewSchemaIRManager(config),
+	}
+}
+
+func (x *SelefraTerraformProviderInit) Run(ctx context.Context) error {
+
+	// generate schema.json
+	if err := x.schemaIRManager.GenerateIRAndSave(ctx); err != nil {
+		return err
+	}
+
+	// rewrite provider.go
+	if err := x.RewirteProviderGo(); err != nil {
+		return err
+	}
+
+	// rewrite resource.go
+	if err := x.RewriteResourcesGo(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (x *SelefraTerraformProviderInit) RewirteProviderGo() error {
+	providerOutputDirectory := path.Join(x.config.Output.Directory, "provider")
+	pathOutputPath := path.Join(providerOutputDirectory, "provider.go")
+	if exists, err := PathExists(pathOutputPath); err == nil && exists {
+		colorlog.Info("file %s already exists, so do not regenerate", pathOutputPath)
+		return nil
+	}
+
+	t, err := template.New("provider.go").Parse(string(provider_template_v2_init.ProviderTemplate))
+	if err != nil {
+		return err
+	}
+	buffer := bytes.Buffer{}
+	renderParams := &InitProviderGoRenderParams{
+		SelefraProviderName:               x.config.Terraform.TerraformProvider.ParseProviderShortName(),
+		ModuleName:                        x.config.Selefra.ModuleName,
+		TerraformProviderExecuteFileSlice: x.config.Terraform.TerraformProvider.ExecuteFiles,
+	}
+	if err = t.ExecuteTemplate(&buffer, "provider.go", renderParams); err != nil {
+		return err
+	}
+	_ = os.MkdirAll(providerOutputDirectory, os.ModePerm)
+	if err := os.WriteFile(pathOutputPath, buffer.Bytes(), os.ModePerm); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (x *SelefraTerraformProviderInit) RewriteResourcesGo() error {
+	// Load the existing resource
+	resourcesOutputDirectory := path.Join(x.config.Output.Directory, "provider")
+	resourcesOutputPath := path.Join(resourcesOutputDirectory, "resources.go")
+
+	existsResourceSet := x.ParseExistsResourceSet()
+	colorlog.Info("load exists resource %d", len(existsResourceSet))
+
+	terraformProviderSchemaIR, err := x.schemaIRManager.readTerraformSchemaIR()
+	if err != nil {
+		colorlog.Error("read terraform schema IR failed: %s", err.Error())
+		return err
+	}
+
+	resourceNeedGenerateCount := 0
+	alreadyExistsCount := 0
+	newAddExistsCount := 0
+	resourceCodeBuff := bytes.Buffer{}
+	for _, terraformResourceSchemaIR := range terraformProviderSchemaIR.Resources {
+		if !x.config.IsResourceNeedGenerate(terraformResourceSchemaIR.ResourceName) {
+			continue
+		}
+		resourceNeedGenerateCount++
+		if _, exists := existsResourceSet[terraformResourceSchemaIR.ResourceName]; exists {
+			alreadyExistsCount++
+			colorlog.Info("resource %s already exists, so ignored", terraformResourceSchemaIR.ResourceName)
+			continue
+		}
+		s := `// terraform resource: %s
+func GetResource_%s() *selefra_terraform_schema.SelefraTerraformResource {
+	return &selefra_terraform_schema.SelefraTerraformResource{
+		SelefraTableName:      "%s",
+		TerraformResourceName: "%s",
+		Description:           "%s",
+		SubTables:             nil,
+		ListIdsFunc: func(ctx context.Context, clientMeta *schema.ClientMeta, taskClient any, task *schema.DataSourcePullTask, resultChannel chan<- any) ([]string, *schema.Diagnostics) {
+			// TODO
+			return nil, nil
+		},
+	}
+}
+
+`
+		resourceCodeString := fmt.Sprintf(s, terraformResourceSchemaIR.ResourceName, terraformResourceSchemaIR.ResourceName, terraformResourceSchemaIR.ResourceName, terraformResourceSchemaIR.ResourceName, terraformResourceSchemaIR.Description)
+		resourceCodeBuff.WriteString(resourceCodeString)
+		newAddExistsCount++
+	}
+
+	// append code to resource.go
+	file, err := os.OpenFile(resourcesOutputPath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
+	if err != nil {
+		colorlog.Error("open %s error: %s", resourcesOutputPath, err.Error())
+		return err
+	}
+	_, err = file.WriteString(resourceCodeBuff.String())
+	if err != nil {
+		colorlog.Error("write %s error: %s", resourcesOutputPath, err.Error())
+		return err
+	}
+	colorlog.Info("init resource.go success: ")
+	colorlog.Info("\t\tTotal Need Generate Resource Count: %d", resourceNeedGenerateCount)
+	colorlog.Info("\t\tAlready Exists Resource Count: %d", alreadyExistsCount)
+	colorlog.Info("\t\tNew Add Resource Count: %d", newAddExistsCount)
+	return nil
+}
+
+func (x *SelefraTerraformProviderInit) ParseExistsResourceSet() map[string]struct{} {
+	existsResourceSet := make(map[string]struct{})
+	resourceGoOutputDirectory := path.Join(x.config.Output.Directory, "provider")
+	resourceGoOutputPath := path.Join(resourceGoOutputDirectory, "resources.go")
+	if exists, err := PathExists(resourceGoOutputPath); err != nil || !exists {
+		return existsResourceSet
+	}
+	fileSet := token.NewFileSet()
+	f, err := parser.ParseFile(fileSet, resourceGoOutputPath, nil, parser.ParseComments)
+	if err != nil {
+		colorlog.Error("parse resource.go file error: %s", err.Error())
+		return existsResourceSet
+	}
+	astutil.Apply(f, func(cursor *astutil.Cursor) bool {
+		kvExpr, ok := cursor.Node().(*ast.KeyValueExpr)
+		if !ok {
+			return true
+		}
+		keyIdent, ok := kvExpr.Key.(*ast.Ident)
+		if !ok {
+			return true
+		}
+		if keyIdent.Name != "TerraformResourceName" {
+			return true
+		}
+		valueIdent, ok := kvExpr.Value.(*ast.BasicLit)
+		if !ok {
+			return true
+		}
+		// maybe wrong, if wrong, I back here change judge rule
+		resourceName := strings.Trim(valueIdent.Value, "\"")
+		existsResourceSet[resourceName] = struct{}{}
+		return true
+	}, nil)
+	return existsResourceSet
+}
+
+// ------------------------------------------------- --------------------------------------------------------------------
+
+type InitProviderGoRenderParams struct {
+	SelefraProviderName               string
+	ModuleName                        string
+	TerraformProviderExecuteFileSlice []*provider.TerraformProviderFile
+}
+
+type InitProviderTablesGoRenderParams struct {
+	TableGeneratorNameSlice []string
+	ModuleName              string
+}
+
+// ------------------------------------------------- --------------------------------------------------------------------
