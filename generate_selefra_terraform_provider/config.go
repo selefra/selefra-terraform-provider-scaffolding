@@ -425,7 +425,12 @@ type Output struct {
 
 func (x *Output) getDirectoryOrDefault() string {
 	if x.Directory == "" {
-		x.Directory = "../"
+		outputDirectory := os.Getenv("SELEFRA_TERRAFORM_OUTPUT_DIRECTORY")
+		if outputDirectory != "" {
+			x.Directory = outputDirectory
+		} else {
+			x.Directory = "./"
+		}
 	}
 	return x.Directory
 }
