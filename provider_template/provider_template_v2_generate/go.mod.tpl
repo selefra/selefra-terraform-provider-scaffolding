@@ -3,7 +3,7 @@ module {{.ModuleName}}
 go 1.18
 
 require (
-	github.com/selefra/selefra-provider-sdk v0.0.15-0.20221214091032-960adc96e959
+	github.com/selefra/selefra-provider-sdk v0.0.17-0.20221230101532-6a06975aa415
 	github.com/spf13/viper v1.14.0
 )
 

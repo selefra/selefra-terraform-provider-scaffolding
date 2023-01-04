@@ -11,6 +11,9 @@ func TestSelefraTerraformProviderInit_Run(t *testing.T) {
 		Terraform: Terraform{
 			TerraformProvider: TerraformProvider{
 				RepoUrl: "https://github.com/hashicorp/terraform-provider-aws",
+				Resources: []string{
+					"aws_codestarconnections_host",
+				},
 			},
 		},
 		Output: Output{

@@ -1,4 +1,4 @@
-package provider
+package resources
 
 import "github.com/selefra/selefra-provider-sdk/terraform/bridge"
 

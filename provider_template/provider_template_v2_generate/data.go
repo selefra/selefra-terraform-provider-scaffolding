@@ -2,11 +2,14 @@ package provider_template_v2_generate
 
 import _ "embed"
 
-//go:embed schema.go.tpl
-var SchemaTemplate string
+//go:embed selefra_schema.go.tpl
+var SelefraSchemaTemplate string
 
-//go:embed provider.go.tpl
-var ProviderTemplate string
+//go:embed selefra_provider.go.tpl
+var SelefraProviderTemplate string
+
+//go:embed selefra_provider_test.go.tpl
+var SelefraProviderTestTemplate string
 
 //go:embed selefra_provider_main/main.go.tpl
 var MainTemplate string

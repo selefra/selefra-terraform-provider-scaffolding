@@ -125,13 +125,27 @@ func GetResource_%s() *selefra_terraform_schema.SelefraTerraformResource {
 		newAddExistsCount++
 	}
 
+	prefix := ""
+	if exists, err := PathExists(resourcesOutputPath); !exists || err != nil {
+		prefix = `package provider
+
+import (
+	"context"
+	"github.com/selefra/selefra-provider-sdk/provider/schema"
+	"github.com/selefra/selefra-provider-sdk/terraform/selefra_terraform_schema"
+)
+
+
+`
+	}
+
 	// append code to resource.go
 	file, err := os.OpenFile(resourcesOutputPath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
 	if err != nil {
 		colorlog.Error("open %s error: %s", resourcesOutputPath, err.Error())
 		return err
 	}
-	_, err = file.WriteString(resourceCodeBuff.String())
+	_, err = file.WriteString(prefix + resourceCodeBuff.String())
 	if err != nil {
 		colorlog.Error("write %s error: %s", resourcesOutputPath, err.Error())
 		return err

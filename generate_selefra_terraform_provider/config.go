@@ -3,10 +3,12 @@ package generate_selefra_terraform_provider
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/go-git/go-git/v5"
 	"github.com/selefra/selefra-provider-sdk/terraform/provider"
+	"github.com/spf13/viper"
 	"github.com/yezihack/colorlog"
 	"math/rand"
 	"net/url"
@@ -16,9 +18,147 @@ import (
 )
 
 type Config struct {
-	Selefra   Selefra   `mapstructure:"selefra"`
-	Terraform Terraform `mapstructure:"terraform"`
-	Output    Output    `mapstructure:"output"`
+	Selefra   Selefra   `mapstructure:"selefra" json:"selefra"`
+	Terraform Terraform `mapstructure:"terraform" json:"terraform"`
+	Output    Output    `mapstructure:"output" json:"output"`
+}
+
+var configJsonLocalPath = ".selefra_terraform_scaffolding_config.json"
+
+func NewConfigFromLocalJson() (*Config, error) {
+	file, err := os.ReadFile(configJsonLocalPath)
+	if err != nil {
+		return nil, err
+	}
+	config := &Config{}
+	err = json.Unmarshal(file, &config)
+	if err != nil {
+		return nil, err
+	}
+	return config, nil
+}
+
+func NewConfigFromEnv() (config *Config, err error) {
+	configPath := os.Getenv("SELEFRA_TERRAFORM_SCAFFOLDING_CONFIG_PATH")
+	terraformProviderUrl := os.Getenv("TERRAFORM_PROVIDER_URL")
+
+	if configPath != "" {
+		config, err = NewConfigFromPath(configPath)
+		if err != nil {
+			colorlog.Error("create config from path %s failed: %s", configPath, err.Error())
+		} else {
+			colorlog.Info("create config from path %s success", configPath)
+			config.saveConfigToLocalJson()
+			return
+		}
+	} else if terraformProviderUrl != "" {
+		config, err = NewConfigFromTerraformProviderRepoUrl(terraformProviderUrl)
+		if err != nil {
+			colorlog.Error("create config from terraform provider url %s failed: %s", terraformProviderUrl, err.Error())
+		} else {
+			colorlog.Info("create config from terraform provider url %s success", terraformProviderUrl)
+			config.saveConfigToLocalJson()
+			return
+		}
+	}
+	colorlog.Error("can not create config, please specify env variable TERRAFORM_PROVIDER_URL or SELEFRA_TERRAFORM_SCAFFOLDING_CONFIG_PATH")
+	err = errors.New("config create failed")
+	return
+}
+
+func NewConfigFromPath(configFilePath string) (*Config, error) {
+	configBytes, err := os.ReadFile(configFilePath)
+	if err != nil {
+		colorlog.Error("read config file error: %s", err.Error())
+		return nil, err
+	}
+
+	viperConfig := viper.New()
+	viperConfig.SetConfigType("yaml")
+	err = viperConfig.ReadConfig(bytes.NewReader(configBytes))
+	if err != nil {
+		colorlog.Error("read config file error: %s", err.Error())
+		return nil, err
+	}
+
+	config := new(Config)
+	err = viperConfig.Unmarshal(&config)
+	if err != nil {
+		colorlog.Error("unmarshal config error: %s", err.Error())
+		return nil, err
+	}
+
+	if err := checkConfig(config); err != nil {
+		colorlog.Error("check config error: %s", err.Error())
+		return nil, err
+	}
+
+	return config, nil
+}
+
+func NewConfigFromTerraformProviderRepoUrl(terraformProviderRepoUrl string) (*Config, error) {
+	config := new(Config)
+	config.Terraform.TerraformProvider.RepoUrl = terraformProviderRepoUrl
+	if err := checkConfig(config); err != nil {
+		colorlog.Error("check config error: %s", err.Error())
+		return nil, err
+	}
+
+	return config, nil
+}
+
+func checkConfig(config *Config) error {
+
+	if config.Selefra.getOrAutoDetectModuleName() == "" {
+		return fmt.Errorf("selefra.module-name must set")
+	}
+
+	if config.Output.getDirectoryOrDefault() == "" {
+		return fmt.Errorf("output.directory must set")
+	}
+
+	if config.Terraform.TerraformProvider.ParseProviderName() == "" {
+		return fmt.Errorf("can not parse provider name from : %s", config.Terraform.TerraformProvider.RepoUrl)
+	}
+
+	// It is the official provider
+	if b, _ := config.Terraform.TerraformProvider.IsTerraformOfficialProvider(); b {
+		files, err := config.Terraform.TerraformProvider.GetTerraformOfficialProviderFiles()
+		if err != nil {
+			return err
+		}
+		if len(files) == 0 {
+			return fmt.Errorf("You have specified an official provider, but I cannot automatically parse the corresponding provider file. Please make the provider file manually")
+		}
+	}
+
+	// It's a provider on github
+	if b, _ := config.Terraform.TerraformProvider.IsGithubRepo(); len(config.Terraform.TerraformProvider.ExecuteFiles) == 0 && b {
+		files, err := config.Terraform.TerraformProvider.RequestGithubReleaseFiles()
+		if err != nil {
+			return err
+		}
+		if len(files) == 0 {
+			return fmt.Errorf("You specified a provider hosted on Github, but I cannot automatically parse the corresponding provider file. Please specify the provider file manually")
+		}
+	}
+
+	if len(config.Terraform.TerraformProvider.ExecuteFiles) == 0 {
+		return fmt.Errorf("it's a provider on github")
+	}
+
+	return nil
+}
+
+func (x *Config) saveConfigToLocalJson() {
+	marshal, err := json.Marshal(x)
+	if err != nil {
+		colorlog.Error("marshal json error: %s", err.Error())
+	}
+	if err := os.WriteFile(configJsonLocalPath, marshal, os.ModePerm); err != nil {
+		colorlog.Error("save config json error: %s", err.Error())
+		return
+	}
 }
 
 func (x *Config) IsResourceNeedGenerate(resourceName string) bool {
@@ -35,7 +175,7 @@ func (x *Config) IsResourceNeedGenerate(resourceName string) bool {
 }
 
 type Selefra struct {
-	ModuleName string `mapstructure:"module-name"`
+	ModuleName string `mapstructure:"module-name" json:"module_name"`
 }
 
 func (x *Selefra) getOrAutoDetectModuleName() string {
@@ -116,7 +256,7 @@ func convertGitUrl(gitUrl string) string {
 // ------------------------------------------------- --------------------------------------------------------------------
 
 type Terraform struct {
-	TerraformProvider TerraformProvider `mapstructure:"provider"`
+	TerraformProvider TerraformProvider `mapstructure:"provider" json:"terraform_provider"`
 }
 
 // ------------------------------------------------- --------------------------------------------------------------------
@@ -125,18 +265,18 @@ type Terraform struct {
 type TerraformProvider struct {
 
 	// provider's warehouse
-	RepoUrl string `mapstructure:"repo-url"`
+	RepoUrl string `mapstructure:"repo-url" json:"repo_url"`
 
 	// This parameter is required when the provider starts
-	Config string `mapstructure:"config"`
+	Config string `mapstructure:"config" json:"config"`
 
 	// Provider executable file
-	ExecuteFiles []*provider.TerraformProviderFile `mapstructure:"execute-files"`
+	ExecuteFiles []*provider.TerraformProviderFile `mapstructure:"execute-files" json:"execute_files"`
 
 	// Resources to be generated. If not set, all resources are generated by default
-	Resources []string `mapstructure:"resources"`
+	Resources []string `mapstructure:"resources" json:"resources"`
 
-	providerName string
+	providerName string `json:"provider_name"`
 }
 
 // IsGithubRepo Determines whether the specified repository is a GitHub repository
@@ -280,12 +420,12 @@ func (x *TerraformProvider) ParseProviderShortName() string {
 type Output struct {
 
 	// The directory to which the generated results are output
-	Directory string `mapstructure:"directory"`
+	Directory string `mapstructure:"directory" json:"directory"`
 }
 
 func (x *Output) getDirectoryOrDefault() string {
 	if x.Directory == "" {
-		x.Directory = "./"
+		x.Directory = "../"
 	}
 	return x.Directory
 }

@@ -9,34 +9,34 @@ import (
 	"text/template"
 )
 
-type ProviderGenerator struct {
+type SelefraProviderTestGenerator struct {
 	config                      *Config
 	selefraProviderRenderParams *SelefraProviderRenderParams
 }
 
-func NewProviderGenerator(config *Config, selefraProviderRenderParams *SelefraProviderRenderParams) *ProviderGenerator {
-	return &ProviderGenerator{
+func NewSelefraProviderTestGenerator(config *Config, selefraProviderRenderParams *SelefraProviderRenderParams) *SelefraProviderTestGenerator {
+	return &SelefraProviderTestGenerator{
 		config:                      config,
 		selefraProviderRenderParams: selefraProviderRenderParams,
 	}
 }
 
-func (x *ProviderGenerator) Run() error {
-	t, err := template.New("provider.go").Parse(string(provider_template_v2_generate.ProviderTemplate))
+func (x *SelefraProviderTestGenerator) Run() error {
+	t, err := template.New("selefra_provider_test.go").Parse(string(provider_template_v2_generate.SelefraProviderTestTemplate))
 	if err != nil {
-		colorlog.Error("parse provider.go template error: %s", err.Error())
+		colorlog.Error("parse selefra_provider_test.go template error: %s", err.Error())
 		return err
 	}
 
 	buffer := bytes.Buffer{}
-	if err = t.ExecuteTemplate(&buffer, "provider.go", x.selefraProviderRenderParams); err != nil {
-		colorlog.Error("render provider.go error: %s", err.Error())
+	if err = t.ExecuteTemplate(&buffer, "selefra_provider_test.go", x.selefraProviderRenderParams); err != nil {
+		colorlog.Error("render selefra_provider_test.go error: %s", err.Error())
 		return err
 	}
 
 	providerGoOutputDirectory := path.Join(x.config.Output.Directory, "resources")
 	_ = os.MkdirAll(providerGoOutputDirectory, os.ModePerm)
-	providerGoOutputPath := path.Join(providerGoOutputDirectory, "selefra_provider.go")
+	providerGoOutputPath := path.Join(providerGoOutputDirectory, "selefra_provider_test.go")
 	if err := os.WriteFile(providerGoOutputPath, buffer.Bytes(), os.ModePerm); err != nil {
 		colorlog.Error("write file %s error: %s", providerGoOutputPath, err.Error())
 		return err

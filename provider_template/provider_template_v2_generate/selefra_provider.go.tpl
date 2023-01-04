@@ -29,7 +29,7 @@ func GetSelefraTables() []*schema.Table {
     var d *schema.Diagnostics
 
     {{range $index, $table := .TableSlice}}
-    table, d = {{$table.TableSchemaGenerator}}_{{$table.TableName}}()
+    table, d = TableSchemaGenerator_{{$table.TableName}}()
     if !diagnostics.AddDiagnostics(d).HasError() {
         tables = append(tables, table)
     }

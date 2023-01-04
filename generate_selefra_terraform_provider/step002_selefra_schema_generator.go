@@ -23,7 +23,7 @@ func NewSchemaGeneratorV2(config *Config, selefraProviderRenderParams *SelefraPr
 }
 
 func (x *SchemaGenerator) Run(ctx context.Context) error {
-	t, err := template.New("schema.go").Parse(string(provider_template_v2_generate.SchemaTemplate))
+	t, err := template.New("schema.go").Parse(string(provider_template_v2_generate.SelefraSchemaTemplate))
 	if err != nil {
 		colorlog.Error("parse schema.go template error: %s", err.Error())
 		return err

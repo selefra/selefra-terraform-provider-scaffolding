@@ -3,13 +3,10 @@ package cmd
 import (
 	"github.com/selefra/selefra-terraform-provider-scaffolding/generate_selefra_terraform_provider"
 	"github.com/spf13/cobra"
-	"log"
+	"github.com/yezihack/colorlog"
 )
 
-var configFilePath string
-
 func init() {
-	generate.Flags().StringVarP(&configFilePath, "config", "c", "", "yaml config file path")
 	rootCmd.AddCommand(generate)
 }
 
@@ -18,16 +15,25 @@ var generate = &cobra.Command{
 	Short: "Generate selefra provider from terraform's provider",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		generator, err := generate_selefra_terraform_provider.NewGenerateTerraformProvider(configFilePath)
+
+		colorlog.Info("begin run generate...")
+
+		var config *generate_selefra_terraform_provider.Config
+		var err error
+		config, err = generate_selefra_terraform_provider.NewConfigFromLocalJson()
 		if err != nil {
-			log.Fatal(err)
+			config, err = generate_selefra_terraform_provider.NewConfigFromEnv()
+		}
+		if err != nil {
 			return
 		}
-		err = generator.Run()
+
+		err = generate_selefra_terraform_provider.NewGenerator(config).Run()
 		if err != nil {
-			log.Fatal(err)
+			colorlog.Error("run generate failed: %s", err.Error())
 		} else {
-			log.Println("Done")
+			colorlog.Info("run generate done")
 		}
+
 	},
 }

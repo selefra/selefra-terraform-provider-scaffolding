@@ -6,7 +6,8 @@ package resources
 import (
 	"context"
 	"github.com/selefra/selefra-provider-sdk/provider/schema"
-	"github.com/selefra/selefra-provider-sdk/table_schema_generator"{{range $key, $value := .ImportSet}}
+	"github.com/selefra/selefra-provider-sdk/table_schema_generator"
+    "github.com/selefra/selefra-provider-sdk/terraform/bridge"{{range $key, $value := .ImportSet}}
     "{{$key}}" {{end}}
 )
 {{end}}
@@ -14,10 +15,12 @@ import (
 {{range $index, $table := .TableSlice}}
 
 // {{$table.TableName}}
-func {{$table.TableSchemaGenerator}}_{{$table.TableName}}() (*schema.Table, *schema.NewDiagnostics) {
+func TableSchemaGenerator_{{$table.TableName}}() (*schema.Table, *schema.Diagnostics) {
     diagnostics := schema.NewDiagnostics()
 
-    table, d := GetResource_{{$table.ResourceName}}().ToTable()
+    table, d := GetResource_{{$table.TableName}}().ToTable(func(ctx context.Context, clientMeta *schema.ClientMeta, taskClient any, task *schema.DataSourcePullTask) *bridge.TerraformBridge {
+        return taskClient.(*Client).TerraformBridge
+    })
     if diagnostics.AddDiagnostics(d).HasError() {
         return nil, diagnostics
     }

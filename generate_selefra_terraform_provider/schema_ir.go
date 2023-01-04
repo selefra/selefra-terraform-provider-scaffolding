@@ -154,6 +154,12 @@ func FromTerraformProviderSchema(terraformProviderName string, provider shim.Pro
 		ProviderName: terraformProviderName,
 	}
 	provider.ResourcesMap().Range(func(terraformResourceName string, terraformResourceSchema shim.Resource) bool {
+
+		if !config.IsResourceNeedGenerate(terraformResourceName) {
+			colorlog.Info("terraform resource %s, do not need generate, so ignored", terraformResourceName)
+			return true
+		}
+
 		resourceSchemaIR := FromTerraformResourceSchema(terraformResourceName, terraformResourceSchema, config)
 		if resourceSchemaIR == nil {
 			return true
@@ -193,25 +199,29 @@ func FromTerraformResourceSchema(terraformResourceName string, terraformResource
 		ResourceName: terraformResourceName,
 		Description:  "",
 	}
-	hasIdColumn := false
+	isNeedGenerate := false
 	terraformResourceSchema.Schema().Range(func(terraformColumnName string, terraformColumnSchema shim.Schema) bool {
 
-		if !config.IsResourceNeedGenerate(terraformColumnName) {
-			colorlog.Info("terraform resource %s, do not need generate, so ignored", terraformColumnName)
-			return true
-		}
+		//if !config.IsResourceNeedGenerate(terraformColumnName) {
+		//	colorlog.Info("terraform resource %s, do not need generate, so ignored", terraformColumnName)
+		//	return true
+		//}
 		columnSchema := FromTerraformColumnSchema(terraformColumnName, terraformColumnSchema)
 		if columnSchema == nil {
 			return true
 		}
 		resourceSchema.Columns = append(resourceSchema.Columns, columnSchema)
 		if columnSchema.IsID() {
-			hasIdColumn = true
+			isNeedGenerate = true
 		}
 		return true
 	})
-	if !hasIdColumn {
-		colorlog.Error("terraform resource %s do not have id column, so ignored", terraformResourceName)
+	//if !hasIdColumn {
+	//	colorlog.Error("terraform resource %s do not have id column, so ignored", terraformResourceName)
+	//	return nil
+	//}
+
+	if !isNeedGenerate {
 		return nil
 	}
 
