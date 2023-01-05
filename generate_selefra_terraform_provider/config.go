@@ -281,11 +281,22 @@ func (x *Config) isOkGitRepoUrl(repoUrl string) bool {
 	return true
 }
 
-func convertGitUrl(gitUrl string) string {
-	s := strings.ReplaceAll(gitUrl, "git@", "")
-	s = strings.ReplaceAll(s, ".git", "")
-	s = strings.ReplaceAll(s, ":", "/")
-	return s
+func convertGitUrl(remoteUrl string) string {
+	lowerRemoteUrl := strings.ToLower(remoteUrl)
+	// is git protocol
+	// git@github.com:selefra/selefra-terraform-provider-scaffolding.git
+	if strings.HasPrefix(lowerRemoteUrl, "git@") {
+		s := strings.ReplaceAll(remoteUrl, "git@", "")
+		s = strings.ReplaceAll(s, ".git", "")
+		s = strings.ReplaceAll(s, ":", "/")
+		return s
+	} else if strings.HasPrefix(lowerRemoteUrl, "https") || strings.HasPrefix(lowerRemoteUrl, "http") {
+		// is http protocol
+		// https://github.com/selefra/selefra-terraform-provider-scaffolding.git
+		return strings.ReplaceAll(remoteUrl, ".git", "")
+	} else {
+		return remoteUrl
+	}
 }
 
 // ------------------------------------------------- --------------------------------------------------------------------
