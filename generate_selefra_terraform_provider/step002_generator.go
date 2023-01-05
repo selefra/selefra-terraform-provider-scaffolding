@@ -44,9 +44,9 @@ func (x *Generator) Run() error {
 		return err
 	}
 
-	if err := NewGoModGenerator(x.config).Run(); err != nil {
-		return err
-	}
+	//if err := NewGoModGenerator(x.config).Run(); err != nil {
+	//	return err
+	//}
 
 	// ------------------------------------------------- --------------------------------------------------------------------
 

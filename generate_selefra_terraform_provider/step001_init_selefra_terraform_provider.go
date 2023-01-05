@@ -46,7 +46,26 @@ func (x *SelefraTerraformProviderInit) Run(ctx context.Context) error {
 		return err
 	}
 
+	if err := x.RewriteGoMod(); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func (x *SelefraTerraformProviderInit) RewriteGoMod() error {
+	goModPath := path.Join(x.config.Output.Directory, "go.mod")
+	file, err := os.ReadFile(goModPath)
+	if err != nil {
+		colorlog.Error("can not open file %s, error msg: %s", goModPath, err.Error())
+		return err
+	}
+	newGoModFile := strings.ReplaceAll(string(file), "module github.com/selefra/selefra-provider-template", "module "+x.config.Selefra.ModuleName)
+	err = os.WriteFile(goModPath, []byte(newGoModFile), os.ModePerm)
+	if err != nil {
+		colorlog.Error("rewrite go.mod file error: %s", err.Error())
+	}
+	return err
 }
 
 func (x *SelefraTerraformProviderInit) RewirteProviderGo() error {
