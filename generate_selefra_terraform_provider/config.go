@@ -293,7 +293,10 @@ func convertGitUrl(remoteUrl string) string {
 	} else if strings.HasPrefix(lowerRemoteUrl, "https") || strings.HasPrefix(lowerRemoteUrl, "http") {
 		// is http protocol
 		// https://github.com/selefra/selefra-terraform-provider-scaffolding.git
-		return strings.ReplaceAll(remoteUrl, ".git", "")
+		s := strings.ReplaceAll(remoteUrl, ".git", "")
+		s = strings.ReplaceAll(remoteUrl, "http://", "")
+		s = strings.ReplaceAll(remoteUrl, "https://", "")
+		return s
 	} else {
 		return remoteUrl
 	}
