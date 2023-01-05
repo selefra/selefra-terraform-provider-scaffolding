@@ -10,5 +10,5 @@ import (
 func Test_Provider(t *testing.T) {
 	provider := GetSelefraProvider()
 	split := strings.Split(os.Getenv("SELEFRA_TEST_TABLES"), ",")
-	test_helper.RunProviderPullTables(provider, "", "./", split...)
+	test_helper.RunProviderPullTables(provider, ""log: info"", "./", split...)
 }
