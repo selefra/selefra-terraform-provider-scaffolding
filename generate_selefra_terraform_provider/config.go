@@ -121,7 +121,7 @@ func NewConfigFromTerraformProviderRepoUrl(terraformProviderRepoUrl string) (*Co
 
 func checkConfig(config *Config) error {
 
-	if config.Selefra.getOrAutoDetectModuleName() == "" {
+	if config.getOrAutoDetectModuleName() == "" {
 		return fmt.Errorf("selefra.module-name must set")
 	}
 
@@ -191,24 +191,24 @@ type Selefra struct {
 	ModuleName string `mapstructure:"module-name" json:"module_name"`
 }
 
-func (x *Selefra) getOrAutoDetectModuleName() string {
-	if x.ModuleName != "" {
-		return x.ModuleName
+func (x *Config) getOrAutoDetectModuleName() string {
+	if x.Selefra.ModuleName != "" {
+		return x.Selefra.ModuleName
 	}
 
-	x.ModuleName = os.Getenv("SELEFRA_MODULE_NAME")
-	if x.ModuleName != "" {
-		return x.ModuleName
+	x.Selefra.ModuleName = os.Getenv("SELEFRA_MODULE_NAME")
+	if x.Selefra.ModuleName != "" {
+		return x.Selefra.ModuleName
 	}
 
-	x.ModuleName = x.tryFindGitModuleNameFromLocalGitRepo()
-	if x.ModuleName == "" {
-		x.ModuleName = x.tryFindGitModuleNameFromGoMod()
+	x.Selefra.ModuleName = x.tryFindGitModuleNameFromLocalGitRepo()
+	if x.Selefra.ModuleName == "" {
+		x.Selefra.ModuleName = x.tryFindGitModuleNameFromGoMod()
 	}
-	return x.ModuleName
+	return x.Selefra.ModuleName
 }
 
-func (x *Selefra) tryFindGitModuleNameFromGoMod() string {
+func (x *Config) tryFindGitModuleNameFromGoMod() string {
 	fileBytes, err := os.ReadFile("go.mod")
 	if err != nil {
 		fileBytes, err = os.ReadFile("../go.mod")
@@ -236,13 +236,13 @@ func (x *Selefra) tryFindGitModuleNameFromGoMod() string {
 	return split[1]
 }
 
-func (x *Selefra) tryFindGitModuleNameFromLocalGitRepo() string {
+func (x *Config) tryFindGitModuleNameFromLocalGitRepo() string {
 	//open, err := git.PlainOpen(".git")
 	//if err != nil {
 	//	colorlog.Error("")
 	//	open, err = git.PlainOpen("../.git")
 	//}
-	gitRepoPath := path.Join(x.getOrAutoDetectModuleName(), ".git")
+	gitRepoPath := path.Join(x.Output.getDirectoryOrDefault(), ".git")
 	open, err := git.PlainOpen(gitRepoPath)
 	if err != nil {
 		colorlog.Error("try open git repo %s error: %s", gitRepoPath, err.Error())
@@ -264,7 +264,7 @@ func (x *Selefra) tryFindGitModuleNameFromLocalGitRepo() string {
 	return ""
 }
 
-func (x *Selefra) isOkGitRepoUrl(repoUrl string) bool {
+func (x *Config) isOkGitRepoUrl(repoUrl string) bool {
 	if !strings.HasPrefix(strings.ToLower(repoUrl), "github.com/") {
 		return false
 	}
