@@ -261,6 +261,8 @@ func (x *Config) tryFindGitModuleNameFromLocalGitRepo() string {
 			if x.isOkGitRepoUrl(repoUrl) {
 				colorlog.Info("find module name %s from git repo %s", repoUrl, gitRepoPath)
 				return repoUrl
+			} else {
+				colorlog.Info("git repo remote url %s not ok", repoUrl)
 			}
 		}
 	}
