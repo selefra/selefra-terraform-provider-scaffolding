@@ -116,6 +116,7 @@ func checkConfig(config *Config) error {
 	if config.Output.getDirectoryOrDefault() == "" {
 		return fmt.Errorf("output.directory must set")
 	}
+	colorlog.Info("workspace directory = %s", config.Output.getDirectoryOrDefault())
 
 	if config.Terraform.TerraformProvider.ParseProviderName() == "" {
 		return fmt.Errorf("can not parse provider name from : %s", config.Terraform.TerraformProvider.RepoUrl)
