@@ -73,7 +73,7 @@ func (x *CopyProvider) computeDestinationPath(sourceDirectory, destinationDirect
 		colorlog.Error("destination directory error, sourceDirectory = %s, destinationDirectory = %s, sourcePath = %s", sourceDirectory, destinationDirectory, sourcePath)
 		return ""
 	}
-	if index+len(sourceDirectory)+1 > len(sourceDirectory) {
+	if index+len(sourceDirectory)+1 > len(sourcePath) {
 		return destinationDirectory
 	}
 	return path.Join(destinationDirectory, sourcePath[index+len(sourceDirectory)+1:])

@@ -19,7 +19,7 @@ func TestCopyProvider_computeDestinationPath(t *testing.T) {
 		Output: Output{
 			Directory: "./test/",
 		},
-	}).computeDestinationPath("a", "b", "a/c")
+	}).computeDestinationPath("provider", "resources", "provider/provider.go")
 	t.Log(destPath)
 	assert.NotEqual(t, "", destPath)
 }
