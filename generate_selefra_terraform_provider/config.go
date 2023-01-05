@@ -237,30 +237,34 @@ func (x *Config) tryFindGitModuleNameFromGoMod() string {
 }
 
 func (x *Config) tryFindGitModuleNameFromLocalGitRepo() string {
-	//open, err := git.PlainOpen(".git")
-	//if err != nil {
-	//	colorlog.Error("")
-	//	open, err = git.PlainOpen("../.git")
-	//}
 	gitRepoPath := path.Join(x.Output.getDirectoryOrDefault(), ".git")
 	open, err := git.PlainOpen(gitRepoPath)
 	if err != nil {
 		colorlog.Error("try open git repo %s error: %s", gitRepoPath, err.Error())
+		gitRepoPath = path.Join(x.Output.getDirectoryOrDefault(), "../.git")
+		open, err = git.PlainOpen(gitRepoPath)
+	}
+	if err != nil {
+		colorlog.Error("try open git repo %s error: %s", gitRepoPath, err.Error())
 		return ""
 	}
+	colorlog.Info("open git repo success: %s", gitRepoPath)
 	remotes, err := open.Remotes()
 	if err != nil {
 		colorlog.Error("get git repo remote url error: %s", err.Error())
 		return ""
 	}
+	colorlog.Info("read remote url from git repo %s", gitRepoPath)
 	for _, remote := range remotes {
 		for _, gitUrl := range remote.Config().URLs {
 			repoUrl := convertGitUrl(gitUrl)
 			if x.isOkGitRepoUrl(repoUrl) {
+				colorlog.Info("find module name %s from git repo %s", repoUrl, gitRepoPath)
 				return repoUrl
 			}
 		}
 	}
+	colorlog.Error("find module name from git repo %s failed", gitRepoPath)
 	return ""
 }
 
