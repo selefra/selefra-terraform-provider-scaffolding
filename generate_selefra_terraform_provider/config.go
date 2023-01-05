@@ -230,9 +230,9 @@ func (x *Selefra) tryFindGitModuleNameFromGoMod() string {
 }
 
 func (x *Selefra) tryFindGitModuleNameFromLocalGitRepo() string {
-	open, err := git.PlainOpen(".git")
+	open, err := git.PlainOpen("./")
 	if err != nil {
-		open, err = git.PlainOpen("../.git")
+		open, err = git.PlainOpen("../")
 	}
 	if err != nil {
 		return ""
