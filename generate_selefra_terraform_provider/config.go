@@ -294,8 +294,8 @@ func convertGitUrl(remoteUrl string) string {
 		// is http protocol
 		// https://github.com/selefra/selefra-terraform-provider-scaffolding.git
 		s := strings.ReplaceAll(remoteUrl, ".git", "")
-		s = strings.ReplaceAll(remoteUrl, "http://", "")
-		s = strings.ReplaceAll(remoteUrl, "https://", "")
+		s = strings.ReplaceAll(s, "http://", "")
+		s = strings.ReplaceAll(s, "https://", "")
 		return s
 	} else {
 		return remoteUrl
