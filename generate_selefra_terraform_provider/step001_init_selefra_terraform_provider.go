@@ -64,6 +64,8 @@ func (x *SelefraTerraformProviderInit) RewriteGoMod() error {
 	err = os.WriteFile(goModPath, []byte(newGoModFile), os.ModePerm)
 	if err != nil {
 		colorlog.Error("rewrite go.mod file error: %s", err.Error())
+	} else {
+		colorlog.Info("rewrite go.mod file success")
 	}
 	return err
 }
