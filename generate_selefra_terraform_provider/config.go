@@ -47,6 +47,11 @@ func NewConfigFromEnv() (config *Config, err error) {
 		if err != nil {
 			colorlog.Error("create config from path %s failed: %s", configPath, err.Error())
 		} else {
+			if err := checkConfig(config); err != nil {
+				colorlog.Error("check config error: %s", err.Error())
+				return nil, err
+			}
+
 			colorlog.Info("create config from path %s success", configPath)
 			config.saveConfigToLocalJson()
 			return
@@ -56,6 +61,12 @@ func NewConfigFromEnv() (config *Config, err error) {
 		if err != nil {
 			colorlog.Error("create config from terraform provider url %s failed: %s", terraformProviderUrl, err.Error())
 		} else {
+
+			if err := checkConfig(config); err != nil {
+				colorlog.Error("check config error: %s", err.Error())
+				return nil, err
+			}
+
 			colorlog.Info("create config from terraform provider url %s success", terraformProviderUrl)
 			config.saveConfigToLocalJson()
 			return
