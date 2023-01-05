@@ -95,6 +95,7 @@ func (x *SelefraTerraformProviderInit) RewriteResourcesGo() error {
 	alreadyExistsCount := 0
 	newAddExistsCount := 0
 	resourceCodeBuff := bytes.Buffer{}
+	ignoredResourceNameSlice := make([]string, 0)
 	for _, terraformResourceSchemaIR := range terraformProviderSchemaIR.Resources {
 		if !x.config.IsResourceNeedGenerate(terraformResourceSchemaIR.ResourceName) {
 			continue
@@ -102,7 +103,8 @@ func (x *SelefraTerraformProviderInit) RewriteResourcesGo() error {
 		resourceNeedGenerateCount++
 		if _, exists := existsResourceSet[terraformResourceSchemaIR.ResourceName]; exists {
 			alreadyExistsCount++
-			colorlog.Info("resource %s already exists, so ignored", terraformResourceSchemaIR.ResourceName)
+			//colorlog.Info("resource %s already exists, so ignored", terraformResourceSchemaIR.ResourceName)
+			ignoredResourceNameSlice = append(ignoredResourceNameSlice, terraformResourceSchemaIR.ResourceName)
 			continue
 		}
 		s := `// terraform resource: %s
@@ -150,6 +152,11 @@ import (
 		colorlog.Error("write %s error: %s", resourcesOutputPath, err.Error())
 		return err
 	}
+
+	if len(ignoredResourceNameSlice) != 0 {
+		colorlog.Info("ignored resource: %s", ignoredResourceNameSlice)
+	}
+
 	colorlog.Info("init resource.go success: ")
 	colorlog.Info("\t\tTotal Need Generate Resource Count: %d", resourceNeedGenerateCount)
 	colorlog.Info("\t\tAlready Exists Resource Count: %d", alreadyExistsCount)
