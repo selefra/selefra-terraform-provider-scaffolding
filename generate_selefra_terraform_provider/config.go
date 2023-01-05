@@ -221,13 +221,18 @@ func (x *Selefra) tryFindGitModuleNameFromGoMod() string {
 		return ""
 	}
 
+	// black list for ignore default
+	if strings.TrimSpace(strings.ToLower(split[1])) == "github.com/selefra/selefra-provider-template" {
+		return ""
+	}
+
 	return split[1]
 }
 
 func (x *Selefra) tryFindGitModuleNameFromLocalGitRepo() string {
 	open, err := git.PlainOpen(".git")
 	if err != nil {
-		open, err = git.PlainOpen(".git")
+		open, err = git.PlainOpen("../.git")
 	}
 	if err != nil {
 		return ""
