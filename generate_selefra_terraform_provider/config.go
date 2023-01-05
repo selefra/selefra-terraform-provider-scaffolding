@@ -13,6 +13,7 @@ import (
 	"math/rand"
 	"net/url"
 	"os"
+	"path"
 	"strings"
 	"time"
 )
@@ -194,6 +195,12 @@ func (x *Selefra) getOrAutoDetectModuleName() string {
 	if x.ModuleName != "" {
 		return x.ModuleName
 	}
+
+	x.ModuleName = os.Getenv("SELEFRA_MODULE_NAME")
+	if x.ModuleName != "" {
+		return x.ModuleName
+	}
+
 	x.ModuleName = x.tryFindGitModuleNameFromLocalGitRepo()
 	if x.ModuleName == "" {
 		x.ModuleName = x.tryFindGitModuleNameFromGoMod()
@@ -230,15 +237,20 @@ func (x *Selefra) tryFindGitModuleNameFromGoMod() string {
 }
 
 func (x *Selefra) tryFindGitModuleNameFromLocalGitRepo() string {
-	open, err := git.PlainOpen("./")
+	//open, err := git.PlainOpen(".git")
+	//if err != nil {
+	//	colorlog.Error("")
+	//	open, err = git.PlainOpen("../.git")
+	//}
+	gitRepoPath := path.Join(x.getOrAutoDetectModuleName(), ".git")
+	open, err := git.PlainOpen(gitRepoPath)
 	if err != nil {
-		open, err = git.PlainOpen("../")
-	}
-	if err != nil {
+		colorlog.Error("try open git repo %s error: %s", gitRepoPath, err.Error())
 		return ""
 	}
 	remotes, err := open.Remotes()
 	if err != nil {
+		colorlog.Error("get git repo remote url error: %s", err.Error())
 		return ""
 	}
 	for _, remote := range remotes {
