@@ -13,3 +13,13 @@ func TestCopyProvider_Run(t *testing.T) {
 	}).Run()
 	assert.Nil(t, err)
 }
+
+func TestCopyProvider_computeDestinationPath(t *testing.T) {
+	destPath := NewCopyProvider(&Config{
+		Output: Output{
+			Directory: "./test/",
+		},
+	}).computeDestinationPath("a", "b", "a/c")
+	t.Log(destPath)
+	assert.NotEqual(t, "", destPath)
+}

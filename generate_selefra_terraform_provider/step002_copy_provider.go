@@ -68,7 +68,12 @@ func (x *CopyProvider) computeDestinationPath(sourceDirectory, destinationDirect
 	// TODO maybe have problem ?
 	sourcePath = strings.ReplaceAll(sourcePath, "\\", "/")
 	sourceDirectory = strings.ReplaceAll(sourceDirectory, "\\", "/")
-	return strings.ReplaceAll(sourcePath, sourceDirectory, destinationDirectory)
+	index := strings.Index(sourcePath, sourceDirectory)
+	if index == -1 {
+		colorlog.Error("destination directory error, sourceDirectory = %s, destinationDirectory = %s, sourcePath = %s", sourceDirectory, destinationDirectory, sourcePath)
+		return ""
+	}
+	return path.Join(destinationDirectory, sourcePath[index+len(sourceDirectory)+1:])
 }
 
 func (x *CopyProvider) processGoFile(filepath string) ([]byte, error) {
