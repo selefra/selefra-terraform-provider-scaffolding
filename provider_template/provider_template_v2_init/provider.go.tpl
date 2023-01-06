@@ -15,7 +15,7 @@ const Version = "v0.0.1"
 
 func GetSelefraTerraformProvider() *selefra_terraform_schema.SelefraTerraformProvider {
 	return &selefra_terraform_schema.SelefraTerraformProvider{
-		Name:         "{{.SelefraProviderName}}",
+		Name:         "selefra-terraform-provider-{{.SelefraProviderName}}",
 		Version:      Version,
 		ResourceList: getResources(),
 		ClientMeta: schema.ClientMeta{
