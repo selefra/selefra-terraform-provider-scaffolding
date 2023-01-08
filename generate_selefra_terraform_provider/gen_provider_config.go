@@ -37,7 +37,7 @@ func GenerateProviderExecuteFiles(terraformReleasePageUrl string) {
 
 // Request the given address, If the request fails, return Nil
 func request(targetUrl string) *resty.Response {
-	colorlog.Error("Start sending request %s", targetUrl)
+	colorlog.Info("Start sending request %s", targetUrl)
 	for tryTimes := 1; tryTimes <= 30; tryTimes++ {
 		if tryTimes != 1 {
 			colorlog.Info("Request URL %s, start retry...", targetUrl)

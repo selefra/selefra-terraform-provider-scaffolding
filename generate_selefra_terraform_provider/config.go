@@ -516,7 +516,6 @@ func (x *TerraformProvider) GetTerraformOfficialProviderFiles() ([]*provider.Ter
 		colorlog.Info("\t\tArch: %s", file.Arch)
 		colorlog.Info("\t\tOS: %s", file.OS)
 		colorlog.Info("\t\tDownload URL: %s", file.DownloadUrl)
-		colorlog.Info("\n")
 	}
 
 	if len(x.ExecuteFiles) == 0 {

@@ -316,6 +316,10 @@ github.com/selefra/selefra-provider-sdk v0.0.17-0.20221230090645-fbd690e2db41 h1
 github.com/selefra/selefra-provider-sdk v0.0.17-0.20221230090645-fbd690e2db41/go.mod h1:QcVMC6sgmMNDtxdi26wKmlPn6J3ZECiEykDT34XMSZI=
 github.com/selefra/selefra-provider-sdk v0.0.17-0.20230104090824-6908c982721f h1:00cFioCrVXWEBWMR+5wvsgG7ZhcNzYXuzsuqXiPj8ls=
 github.com/selefra/selefra-provider-sdk v0.0.17-0.20230104090824-6908c982721f/go.mod h1:QcVMC6sgmMNDtxdi26wKmlPn6J3ZECiEykDT34XMSZI=
+github.com/selefra/selefra-provider-sdk v0.0.17 h1:AG1ZD/TNzMN/3FSGBzUMrrrOljcZ5KNeQ/ntca+FlIM=
+github.com/selefra/selefra-provider-sdk v0.0.17/go.mod h1:o0/4RWphTrg78ja9oedg9EEMpE4A4y+DeVzlnkpnq1s=
+github.com/selefra/selefra-provider-sdk v0.0.18 h1:c0k9sRBpssCS2enBbcM/qAxvRkqIlbkekrmCe2lpaPk=
+github.com/selefra/selefra-provider-sdk v0.0.18/go.mod h1:o0/4RWphTrg78ja9oedg9EEMpE4A4y+DeVzlnkpnq1s=
 github.com/selefra/selefra-utils v0.0.2 h1:Z3cAmMoTr6XePiZJakRmLVi7CvMjZ4ypt8TO73M03F0=
 github.com/selefra/selefra-utils v0.0.2/go.mod h1:LPY6RNU12IniRH3xz7yS7xF10YH3emQ6NWrn6UuBjEk=
 github.com/sergi/go-diff v1.1.0/go.mod h1:STckp+ISIX8hZLjrqAeVduY0gWCT9IjLuqbuNXdaHfM=
