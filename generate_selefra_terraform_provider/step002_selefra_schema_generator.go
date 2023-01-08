@@ -6,7 +6,7 @@ import (
 	"github.com/selefra/selefra-terraform-provider-scaffolding/provider_template/provider_template_v2_generate"
 	"github.com/yezihack/colorlog"
 	"os"
-	"path"
+	"path/filepath"
 	"text/template"
 )
 
@@ -35,9 +35,9 @@ func (x *SchemaGenerator) Run(ctx context.Context) error {
 		return err
 	}
 
-	schemaGoOutputDirectory := path.Join(x.config.Output.Directory, "resources")
+	schemaGoOutputDirectory := filepath.Join(x.config.Output.Directory, "resources")
 	_ = os.MkdirAll(schemaGoOutputDirectory, os.ModePerm)
-	schemaGoOutputPath := path.Join(schemaGoOutputDirectory, "selefra_schema.go")
+	schemaGoOutputPath := filepath.Join(schemaGoOutputDirectory, "selefra_schema.go")
 	if err := os.WriteFile(schemaGoOutputPath, buffer.Bytes(), os.ModePerm); err != nil {
 		colorlog.Error("write file %s error: %s", schemaGoOutputPath, err.Error())
 		return err

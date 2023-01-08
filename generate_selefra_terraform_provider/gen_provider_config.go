@@ -37,7 +37,12 @@ func GenerateProviderExecuteFiles(terraformReleasePageUrl string) {
 
 // Request the given address, If the request fails, return Nil
 func request(targetUrl string) *resty.Response {
-	for tryTimes := 1; tryTimes <= 10; tryTimes++ {
+	colorlog.Error("Start sending request %s", targetUrl)
+	for tryTimes := 1; tryTimes <= 30; tryTimes++ {
+		if tryTimes != 1 {
+			colorlog.Info("Request URL %s, start retry...", targetUrl)
+		}
+		start := time.Now()
 		response, err := resty.
 			New().SetTimeout(time.Minute*3).
 			R().
@@ -51,6 +56,8 @@ func request(targetUrl string) *resty.Response {
 			time.Sleep(time.Millisecond * time.Duration(rand.Intn(4000)+1000))
 			continue
 		}
+		cost := time.Now().Sub(start)
+		colorlog.Info("Succeeded in requesting %s. cost time: %s", targetUrl, cost.String())
 		return response
 	}
 	return nil

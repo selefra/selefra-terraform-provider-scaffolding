@@ -13,19 +13,30 @@ import (
 	"math/rand"
 	"net/url"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"time"
 )
 
+// Config Some configuration information is required when the scaffold is running
 type Config struct {
-	Selefra   Selefra   `mapstructure:"selefra" json:"selefra"`
+
+	// Selefra related configuration information, such as the name of the generated module, etc
+	Selefra Selefra `mapstructure:"selefra" json:"selefra"`
+
+	// Terraform-related parameter Settings, such as the Provider from which to generate the Selefra
 	Terraform Terraform `mapstructure:"terraform" json:"terraform"`
-	Output    Output    `mapstructure:"output" json:"output"`
+
+	// Terraform-related parameter Settings, such as the Provider from which to generate the Selefra
+	Output Output `mapstructure:"output" json:"output"`
 }
 
+// A copy of the configuration file is cached locally after each initialization, so that the next time you run generate,
+// you can use the cache of the configuration file instead of generating a new copy, because generating a configuration
+// file is a time-consuming operation, and adding this cache will greatly increase the speed of your application
 var configJsonLocalPath = ".selefra_terraform_scaffolding_config.json"
 
+// NewConfigFromLocalJson Read the configuration .file previously cached locally
 func NewConfigFromLocalJson() (*Config, error) {
 	file, err := os.ReadFile(configJsonLocalPath)
 	if err != nil {
@@ -36,13 +47,25 @@ func NewConfigFromLocalJson() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	// The local cache is considered directly available and does not need to be checked
 	return config, nil
 }
 
+// NewConfigFromEnv Try to generate a configuration file based on the parameters passed by the environment variable
 func NewConfigFromEnv() (config *Config, err error) {
-	configPath := os.Getenv("SELEFRA_TERRAFORM_SCAFFOLDING_CONFIG_PATH")
-	terraformProviderUrl := os.Getenv("TERRAFORM_PROVIDER_URL")
 
+	// You can use environment variables to pass the path to a configuration file
+	configPath := os.Getenv("SELEFRA_TERRAFORM_SCAFFOLDING_CONFIG_PATH")
+
+	// Or just pass a repository URL for the Provider of Terraform
+	// Both variables are acceptable here for version compatibility
+	terraformProviderUrl := os.Getenv("TERRAFORM_PROVIDER_URL")
+	if terraformProviderUrl == "" {
+		terraformProviderUrl = os.Getenv("TERRAFORM_PROVIDER")
+	}
+
+	// The path of the configuration file has a higher priority. If the path of the configuration file is passed,
+	// the path of the configuration file is preferentially used
 	if configPath != "" {
 		config, err = NewConfigFromPath(configPath)
 		if err != nil {
@@ -78,6 +101,7 @@ func NewConfigFromEnv() (config *Config, err error) {
 	return
 }
 
+// NewConfigFromPath Creates a profile based on the specified profile path
 func NewConfigFromPath(configFilePath string) (*Config, error) {
 	configBytes, err := os.ReadFile(configFilePath)
 	if err != nil {
@@ -89,14 +113,14 @@ func NewConfigFromPath(configFilePath string) (*Config, error) {
 	viperConfig.SetConfigType("yaml")
 	err = viperConfig.ReadConfig(bytes.NewReader(configBytes))
 	if err != nil {
-		colorlog.Error("read config file error: %s", err.Error())
+		colorlog.Error("viper read config file error: %s, content = %s", err.Error(), string(configBytes))
 		return nil, err
 	}
 
 	config := new(Config)
 	err = viperConfig.Unmarshal(&config)
 	if err != nil {
-		colorlog.Error("unmarshal config error: %s", err.Error())
+		colorlog.Error("unmarshal config file error: %s, config file content = %s", err.Error(), string(configBytes))
 		return nil, err
 	}
 
@@ -119,29 +143,51 @@ func NewConfigFromTerraformProviderRepoUrl(terraformProviderRepoUrl string) (*Co
 	return config, nil
 }
 
+// Do some checking and automatic configuration through this method
 func checkConfig(config *Config) error {
 
-	if config.getOrAutoDetectModuleName() == "" {
-		return fmt.Errorf("selefra.module-name must set")
+	// Check that the URL of the Terraform Provider is set
+	if config.Terraform.TerraformProvider.RepoUrl == "" {
+		errorMsg := `The Terraform Provider URL is empty. You can solve the problem in the following centralized manner:
+- If you specify the configuration file, you can specify the repository address of the Terraform Provider to be accessed in the terraform.provider.repo-url of the configuration file
+- Or you can specify the environment variable TERRAFORM_PROVIDER_URL or TERRAFORM_PROVIDER`
+		colorlog.Error(errorMsg)
+		return ErrCheckConfigFailed
 	}
 
+	// If the module name is not configured, it is automatically generated. If it cannot be generated, an error message is displayed
+	if config.getOrAutoDetectModuleName() == "" {
+		errorMsg := `The module name cannot be read. Rectify the fault in one of the following ways:
+- Make sure your repository is hosted on Github and synchronized locally using git clone
+- Specify the module name in go.mod
+- Use the environment variable SELEFRA_MODULE_NAME`
+		colorlog.Error(errorMsg)
+		return ErrCheckConfigFailed
+	}
+
+	// If the output path is not configured, a default is generated for it
 	if config.Output.getDirectoryOrDefault() == "" {
-		return fmt.Errorf("output.directory must set")
+		colorlog.Error("Use the environment variable SELEFRA_TERRAFORM_OUTPUT_DIRECTORY to specify the result output directory")
+		return ErrCheckConfigFailed
 	}
 	colorlog.Info("workspace directory = %s", config.Output.getDirectoryOrDefault())
 
-	if config.Terraform.TerraformProvider.ParseProviderName() == "" {
-		return fmt.Errorf("can not parse provider name from : %s", config.Terraform.TerraformProvider.RepoUrl)
+	// Try to resolve the name of the Provider that uses the Terraform
+	if config.Terraform.TerraformProvider.GetOrParseProviderName() == "" {
+		colorlog.Error("The Provider name cannot be resolved from the given Terraform Provider URL: %s", config.Terraform.TerraformProvider.RepoUrl)
+		return ErrCheckConfigFailed
 	}
 
 	// It is the official provider
 	if b, _ := config.Terraform.TerraformProvider.IsTerraformOfficialProvider(); b {
+		// In the case of the official repository, the information for the downloadable file is generated from the official Registry
 		files, err := config.Terraform.TerraformProvider.GetTerraformOfficialProviderFiles()
 		if err != nil {
 			return err
 		}
 		if len(files) == 0 {
-			return fmt.Errorf("You have specified an official provider, but I cannot automatically parse the corresponding provider file. Please make the provider file manually")
+			colorlog.Error("You have specified an official provider, but I cannot automatically parse the corresponding provider file. Please make the provider file manually")
+			return ErrCheckConfigFailed
 		}
 	}
 
@@ -152,13 +198,17 @@ func checkConfig(config *Config) error {
 			return err
 		}
 		if len(files) == 0 {
-			return fmt.Errorf("You specified a provider hosted on Github, but I cannot automatically parse the corresponding provider file. Please specify the provider file manually")
+			colorlog.Error("You specified a provider hosted on Github, but I cannot automatically parse the corresponding provider file. Please specify the provider file manually")
+			return ErrCheckConfigFailed
 		}
 	}
 
 	if len(config.Terraform.TerraformProvider.ExecuteFiles) == 0 {
-		return fmt.Errorf("it's a provider on github")
+		colorlog.Error("it's a provider on github")
+		return ErrCheckConfigFailed
 	}
+
+	colorlog.Info("Check whether the configuration information is correct")
 
 	return nil
 }
@@ -191,24 +241,31 @@ type Selefra struct {
 	ModuleName string `mapstructure:"module-name" json:"module_name"`
 }
 
+// If a module name is configured, use the given module name, otherwise try to detect environment information to automatically generate a module name for it
 func (x *Config) getOrAutoDetectModuleName() string {
 	if x.Selefra.ModuleName != "" {
 		return x.Selefra.ModuleName
 	}
 
-	x.Selefra.ModuleName = os.Getenv("SELEFRA_MODULE_NAME")
+	// You can set this parameter through environment variables
+	x.Selefra.ModuleName = strings.TrimSpace(os.Getenv("SELEFRA_MODULE_NAME"))
 	if x.Selefra.ModuleName != "" {
 		return x.Selefra.ModuleName
 	}
 
-	x.Selefra.ModuleName = x.tryFindGitModuleNameFromLocalGitRepo()
+	// First try reading the module name from go.mod, which will only be used if the user changes the default module name
+	x.Selefra.ModuleName = x.tryFindGitModuleNameFromGoMod()
 	if x.Selefra.ModuleName == "" {
-		x.Selefra.ModuleName = x.tryFindGitModuleNameFromGoMod()
+		// If the module name is not read from go.mod, the user has not changed it manually, and the repository URL is used as the module name
+		x.Selefra.ModuleName = x.tryFindGitModuleNameFromLocalGitRepo()
 	}
+
 	return x.Selefra.ModuleName
 }
 
+// which will only be used if the user changes the default module name
 func (x *Config) tryFindGitModuleNameFromGoMod() string {
+	// Look up two levels for the go.mod file, assuming you're in the $root/bin directory
 	fileBytes, err := os.ReadFile("go.mod")
 	if err != nil {
 		fileBytes, err = os.ReadFile("../go.mod")
@@ -216,11 +273,14 @@ func (x *Config) tryFindGitModuleNameFromGoMod() string {
 	if err != nil {
 		return ""
 	}
+	// go.mod was read and tried to resolve the module name
 	split := strings.Split(string(fileBytes), "\n")
 	if len(split) < 1 {
 		return ""
 	}
-	split = strings.Split(split[0], " ")
+	// example:
+	// module github.com/selefra/selefra-terraform-provider-scaffolding
+	split = strings.Split(strings.TrimSpace(split[0]), " ")
 	if len(split) != 2 {
 		return ""
 	}
@@ -228,48 +288,54 @@ func (x *Config) tryFindGitModuleNameFromGoMod() string {
 		return ""
 	}
 
-	// black list for ignore default
+	// black list for default module name, The modification takes effect only after you manually modify it
 	if strings.TrimSpace(strings.ToLower(split[1])) == "github.com/selefra/selefra-provider-template" {
 		return ""
 	}
 
+	// Obtaining the module name succeeded. Procedure
+	colorlog.Info("read the module name %s from go.mod", split[1])
 	return split[1]
 }
 
+// Try reading the Git repository and get the URL of the repository it is bound to to generate the module name
 func (x *Config) tryFindGitModuleNameFromLocalGitRepo() string {
-	gitRepoPath := path.Join(x.Output.getDirectoryOrDefault(), ".git")
+	// First try reading Git repository information from the current directory
+	gitRepoPath := filepath.Join(x.Output.getDirectoryOrDefault(), ".git")
 	open, err := git.PlainOpen(gitRepoPath)
 	if err != nil {
-		colorlog.Error("try open git repo %s error: %s", gitRepoPath, err.Error())
-		gitRepoPath = path.Join(x.Output.getDirectoryOrDefault(), "../.git")
+		// If not, it attempts to read the repository information from the previous directory
+		//colorlog.Error("try open .git repo %s error: %s", gitRepoPath, err.Error())
+		gitRepoPath = filepath.Join(x.Output.getDirectoryOrDefault(), "../.git")
 		open, err = git.PlainOpen(gitRepoPath)
 	}
 	if err != nil {
-		colorlog.Error("try open git repo %s error: %s", gitRepoPath, err.Error())
+		colorlog.Error("Try open .git repo error: %s, module names for Selefra cannot be generated from git repositories", err.Error())
 		return ""
 	}
-	colorlog.Info("open git repo success: %s", gitRepoPath)
+	colorlog.Info("Open git repo success: %s, parsing repo information...", gitRepoPath)
 	remotes, err := open.Remotes()
 	if err != nil {
-		colorlog.Error("get git repo remote url error: %s", err.Error())
+		colorlog.Error("The remote url cannot be resolved from the repository, error: %s, module names for Selefra cannot be generated from git repositories", err.Error())
 		return ""
 	}
-	colorlog.Info("read remote url from git repo %s", gitRepoPath)
+	colorlog.Info("The remote url for the git repository was read successfully and the module name that generated the selefra is being resolved...", gitRepoPath)
 	for _, remote := range remotes {
-		for _, gitUrl := range remote.Config().URLs {
-			repoUrl := convertGitUrl(gitUrl)
-			if x.isOkGitRepoUrl(repoUrl) {
-				colorlog.Info("find module name %s from git repo %s", repoUrl, gitRepoPath)
-				return repoUrl
+		for _, gitRemoteUrl := range remote.Config().URLs {
+			moduleName := convertGitUrl(gitRemoteUrl)
+			if x.isOkGitRepoUrl(moduleName) {
+				colorlog.Info("The Selefra module name %s is generated from the remote url %s of the Git repository", moduleName, gitRemoteUrl)
+				return moduleName
 			} else {
-				colorlog.Info("git repo remote url %s not ok", repoUrl)
+				colorlog.Info("The module name for Selefra cannot be generated from the Remote Url %s of the Git repository", gitRemoteUrl)
 			}
 		}
 	}
-	colorlog.Error("find module name from git repo %s failed", gitRepoPath)
+	colorlog.Error("None of the Remote urls in the Git repository could generate the Selefra module name, and the automatic generation failed")
 	return ""
 }
 
+// Determine if it is a legitimate Git repository
 func (x *Config) isOkGitRepoUrl(repoUrl string) bool {
 	if !strings.HasPrefix(strings.ToLower(repoUrl), "github.com/") {
 		return false
@@ -281,10 +347,11 @@ func (x *Config) isOkGitRepoUrl(repoUrl string) bool {
 	return true
 }
 
+// Unify the remote addresses configured by http or git methods
 func convertGitUrl(remoteUrl string) string {
 	lowerRemoteUrl := strings.ToLower(remoteUrl)
 	// is git protocol
-	// git@github.com:selefra/selefra-terraform-provider-scaffolding.git
+	// example: git@github.com:selefra/selefra-terraform-provider-scaffolding.git
 	if strings.HasPrefix(lowerRemoteUrl, "git@") {
 		s := strings.ReplaceAll(remoteUrl, "git@", "")
 		s = strings.ReplaceAll(s, ".git", "")
@@ -292,7 +359,7 @@ func convertGitUrl(remoteUrl string) string {
 		return s
 	} else if strings.HasPrefix(lowerRemoteUrl, "https") || strings.HasPrefix(lowerRemoteUrl, "http") {
 		// is http protocol
-		// https://github.com/selefra/selefra-terraform-provider-scaffolding.git
+		// example: https://github.com/selefra/selefra-terraform-provider-scaffolding.git
 		s := strings.ReplaceAll(remoteUrl, ".git", "")
 		s = strings.ReplaceAll(s, "http://", "")
 		s = strings.ReplaceAll(s, "https://", "")
@@ -383,22 +450,26 @@ func (x *TerraformProvider) GetTerraformOfficialProviderFiles() ([]*provider.Ter
 
 	// use cache
 	if len(x.ExecuteFiles) != 0 {
+		colorlog.Info("The Provider Release file is specified in the configuration file, which does not need to be automatically parsed and generated")
 		return x.ExecuteFiles, nil
 	}
 
 	// 1. Obtain the latest version of the provider
-	providerName := x.ParseProviderName()
+	providerName := x.GetOrParseProviderName()
 	if providerName == "" {
-		return nil, fmt.Errorf("can not parse provider name from repo url: %s", x.RepoUrl)
+		colorlog.Error("The Provider name cannot be resolved from the given Terraform Provider URL: %s", x.RepoUrl)
+		return nil, ErrCheckConfigFailed
 	}
 	targetUrl := "https://releases.hashicorp.com/" + providerName
 	response := request(targetUrl)
 	if response == nil {
-		return nil, fmt.Errorf("request terraform releases failed, url = %s", targetUrl)
+		colorlog.Error("An attempt to automatically generate Release information from the official Terraform Provider %s failed. Please try again")
+		return nil, ErrCheckConfigFailed
 	}
 	document, err := goquery.NewDocumentFromReader(bytes.NewReader(response.Body()))
 	if err != nil {
-		return nil, fmt.Errorf("goquery parse dom failed, error message = %s, response = %s", err.Error(), response.String())
+		colorlog.Error("goquery failed to parse html: %s, response = %s", err.Error(), response.String())
+		return nil, ErrCheckConfigFailed
 	}
 	latestVersionFilePage := ""
 	document.Find("li>a").Each(func(i int, selection *goquery.Selection) {
@@ -407,18 +478,21 @@ func (x *TerraformProvider) GetTerraformOfficialProviderFiles() ([]*provider.Ter
 			latestVersionFilePage = "https://releases.hashicorp.com" + href
 		}
 	})
-	colorlog.Info("Terraform provider %s, find latest version %s", x.ParseProviderName(), latestVersionFilePage)
+	colorlog.Info("Terraform provider %s, find latest version %s", x.GetOrParseProviderName(), latestVersionFilePage)
+
 	// Random hibernation to avoid too frequent requests to Terraform's official repository
 	time.Sleep(time.Second * time.Duration(rand.Intn(3)+3))
 
 	// 2. Obtain the file of the latest version
 	response = request(latestVersionFilePage)
 	if response == nil {
-		return nil, fmt.Errorf("request terraform releases failed, url = %s", latestVersionFilePage)
+		colorlog.Error("Failed to obtain the release file of Terraform Provider %s's version %s", providerName, latestVersionFilePage)
+		return nil, ErrCheckConfigFailed
 	}
 	document, err = goquery.NewDocumentFromReader(bytes.NewReader(response.Body()))
 	if err != nil {
-		return nil, fmt.Errorf("goquery parse dom failed, error message = %s, response = %s", err.Error(), response.String())
+		colorlog.Error("goquery fails to parse HTMl, error message: %s, response = %s", err.Error(), response.String())
+		return nil, ErrCheckConfigFailed
 	}
 	providerFileSlice := make([]*provider.TerraformProviderFile, 0)
 	document.Find("a[data-product]").Each(func(i int, selection *goquery.Selection) {
@@ -437,22 +511,28 @@ func (x *TerraformProvider) GetTerraformOfficialProviderFiles() ([]*provider.Ter
 	// make cache
 	x.ExecuteFiles = providerFileSlice
 
-	colorlog.Info("request Terraform provider %s releases success, find %d releases files", x.ParseProviderName(), len(x.ExecuteFiles))
-
-	if len(x.ExecuteFiles) == 0 {
-		colorlog.Error(response.String())
+	colorlog.Info("request Terraform provider %s releases success, find %d releases files", x.GetOrParseProviderName(), len(x.ExecuteFiles))
+	for _, file := range x.ExecuteFiles {
+		colorlog.Info("\t\tArch: %s", file.Arch)
+		colorlog.Info("\t\tOS: %s", file.OS)
+		colorlog.Info("\t\tDownload URL: %s", file.DownloadUrl)
+		colorlog.Info("\n")
 	}
 
-	return providerFileSlice, nil
+	if len(x.ExecuteFiles) == 0 {
+		colorlog.Error("The version information of Terraform Provider is not resolved, URL = %s, response = %s", latestVersionFilePage, response.String())
+	}
+
+	return x.ExecuteFiles, nil
 }
 
-// ParseProviderName Resolve the provider name from the repository url
-func (x *TerraformProvider) ParseProviderName() string {
+// GetOrParseProviderName Resolve the provider name from the repository url
+func (x *TerraformProvider) GetOrParseProviderName() string {
 	if x.providerName != "" {
 		return x.providerName
 	}
 	split := strings.Split(strings.Trim(x.RepoUrl, "/"), "/")
-	if len(split) == 0 {
+	if len(split) < 1 {
 		return ""
 	}
 	x.providerName = split[len(split)-1]
@@ -460,7 +540,7 @@ func (x *TerraformProvider) ParseProviderName() string {
 }
 
 func (x *TerraformProvider) ParseProviderShortName() string {
-	return strings.ReplaceAll(x.ParseProviderName(), "terraform-provider-", "")
+	return strings.ReplaceAll(x.GetOrParseProviderName(), "terraform-provider-", "")
 }
 
 // ------------------------------------------------- --------------------------------------------------------------------
@@ -472,15 +552,17 @@ type Output struct {
 	Directory string `mapstructure:"directory" json:"directory"`
 }
 
+// If the output directory is configured, the user configured one is used, otherwise a default is generated for it
 func (x *Output) getDirectoryOrDefault() string {
-	if x.Directory == "" {
-		outputDirectory := os.Getenv("SELEFRA_TERRAFORM_OUTPUT_DIRECTORY")
-		if outputDirectory != "" {
-			x.Directory = outputDirectory
-		} else {
-			x.Directory = "./"
-		}
+	if x.Directory != "" {
+		return x.Directory
 	}
+
+	x.Directory = os.Getenv("SELEFRA_TERRAFORM_OUTPUT_DIRECTORY")
+	if x.Directory == "" {
+		x.Directory = "./"
+	}
+
 	return x.Directory
 }
 

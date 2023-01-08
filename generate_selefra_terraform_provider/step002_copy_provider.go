@@ -7,7 +7,6 @@ import (
 	"go/printer"
 	"go/token"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 )
@@ -24,8 +23,8 @@ func NewCopyProvider(config *Config) *CopyProvider {
 
 func (x *CopyProvider) Run() error {
 
-	sourceDirectory := path.Join(x.config.Output.Directory, "provider")
-	destinationDirectory := path.Join(x.config.Output.Directory, "resources")
+	sourceDirectory := filepath.Join(x.config.Output.Directory, "provider")
+	destinationDirectory := filepath.Join(x.config.Output.Directory, "resources")
 
 	// delete
 	err := os.RemoveAll(destinationDirectory)
@@ -76,7 +75,7 @@ func (x *CopyProvider) computeDestinationPath(sourceDirectory, destinationDirect
 	if index+len(sourceDirectory)+1 > len(sourcePath) {
 		return destinationDirectory
 	}
-	return path.Join(destinationDirectory, sourcePath[index+len(sourceDirectory)+1:])
+	return filepath.Join(destinationDirectory, sourcePath[index+len(sourceDirectory)+1:])
 }
 
 func (x *CopyProvider) processGoFile(filepath string) ([]byte, error) {

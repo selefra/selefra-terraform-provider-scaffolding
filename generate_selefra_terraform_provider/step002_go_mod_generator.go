@@ -40,9 +40,9 @@ package generate_selefra_terraform_provider
 //		return err
 //	}
 //
-//	goModOutputDirectory := path.Join(x.config.Output.Directory, "resources")
+//	goModOutputDirectory := filepath.Join(x.config.Output.Directory, "resources")
 //	_ = os.MkdirAll(goModOutputDirectory, os.ModePerm)
-//	goModOutputPath := path.Join(goModOutputDirectory, "go.mod")
+//	goModOutputPath := filepath.Join(goModOutputDirectory, "go.mod")
 //	if err := os.WriteFile(goModOutputPath, buffer.Bytes(), os.ModePerm); err != nil {
 //		colorlog.Error("write file %s error: %s", goModOutputPath, err.Error())
 //		return err

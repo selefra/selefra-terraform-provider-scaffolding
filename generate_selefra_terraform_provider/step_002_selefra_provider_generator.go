@@ -5,7 +5,7 @@ import (
 	"github.com/selefra/selefra-terraform-provider-scaffolding/provider_template/provider_template_v2_generate"
 	"github.com/yezihack/colorlog"
 	"os"
-	"path"
+	"path/filepath"
 	"text/template"
 )
 
@@ -34,9 +34,9 @@ func (x *ProviderGenerator) Run() error {
 		return err
 	}
 
-	providerGoOutputDirectory := path.Join(x.config.Output.Directory, "resources")
+	providerGoOutputDirectory := filepath.Join(x.config.Output.Directory, "resources")
 	_ = os.MkdirAll(providerGoOutputDirectory, os.ModePerm)
-	providerGoOutputPath := path.Join(providerGoOutputDirectory, "selefra_provider.go")
+	providerGoOutputPath := filepath.Join(providerGoOutputDirectory, "selefra_provider.go")
 	if err := os.WriteFile(providerGoOutputPath, buffer.Bytes(), os.ModePerm); err != nil {
 		colorlog.Error("write file %s error: %s", providerGoOutputPath, err.Error())
 		return err

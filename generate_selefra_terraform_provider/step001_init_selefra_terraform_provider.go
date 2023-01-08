@@ -12,7 +12,7 @@ import (
 	"go/token"
 	"golang.org/x/tools/go/ast/astutil"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"text/template"
 )
@@ -54,7 +54,7 @@ func (x *SelefraTerraformProviderInit) Run(ctx context.Context) error {
 }
 
 func (x *SelefraTerraformProviderInit) RewriteGoMod() error {
-	goModPath := path.Join(x.config.Output.Directory, "go.mod")
+	goModPath := filepath.Join(x.config.Output.Directory, "go.mod")
 	file, err := os.ReadFile(goModPath)
 	if err != nil {
 		colorlog.Error("can not open file %s, error msg: %s", goModPath, err.Error())
@@ -71,8 +71,8 @@ func (x *SelefraTerraformProviderInit) RewriteGoMod() error {
 }
 
 func (x *SelefraTerraformProviderInit) RewirteProviderGo() error {
-	providerOutputDirectory := path.Join(x.config.Output.Directory, "provider")
-	pathOutputPath := path.Join(providerOutputDirectory, "provider.go")
+	providerOutputDirectory := filepath.Join(x.config.Output.Directory, "provider")
+	pathOutputPath := filepath.Join(providerOutputDirectory, "provider.go")
 	if exists, err := PathExists(pathOutputPath); err == nil && exists {
 		colorlog.Info("file %s already exists, so do not regenerate", pathOutputPath)
 		return nil
@@ -100,8 +100,8 @@ func (x *SelefraTerraformProviderInit) RewirteProviderGo() error {
 
 func (x *SelefraTerraformProviderInit) RewriteResourcesGo() error {
 	// Load the existing resource
-	resourcesOutputDirectory := path.Join(x.config.Output.Directory, "provider")
-	resourcesOutputPath := path.Join(resourcesOutputDirectory, "resources.go")
+	resourcesOutputDirectory := filepath.Join(x.config.Output.Directory, "provider")
+	resourcesOutputPath := filepath.Join(resourcesOutputDirectory, "resources.go")
 
 	existsResourceSet := x.ParseExistsResourceSet()
 	colorlog.Info("load exists resource %d", len(existsResourceSet))
@@ -187,8 +187,8 @@ import (
 
 func (x *SelefraTerraformProviderInit) ParseExistsResourceSet() map[string]struct{} {
 	existsResourceSet := make(map[string]struct{})
-	resourceGoOutputDirectory := path.Join(x.config.Output.Directory, "provider")
-	resourceGoOutputPath := path.Join(resourceGoOutputDirectory, "resources.go")
+	resourceGoOutputDirectory := filepath.Join(x.config.Output.Directory, "provider")
+	resourceGoOutputPath := filepath.Join(resourceGoOutputDirectory, "resources.go")
 	if exists, err := PathExists(resourceGoOutputPath); err != nil || !exists {
 		return existsResourceSet
 	}

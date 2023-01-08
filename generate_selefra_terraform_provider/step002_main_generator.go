@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/selefra/selefra-terraform-provider-scaffolding/provider_template/provider_template_v2_generate"
 	"os"
+	"path/filepath"
 	"text/template"
 )
 
@@ -32,7 +33,7 @@ func (x *MainGenerator) Run() error {
 	}
 
 	_ = os.MkdirAll(x.config.Output.Directory, os.ModePerm)
-	mainFileOutputPath := x.config.Output.Directory + "/main.go"
+	mainFileOutputPath := filepath.Join(x.config.Output.Directory, "main.go")
 	if err := os.WriteFile(mainFileOutputPath, buffer.Bytes(), os.ModePerm); err != nil {
 		return err
 	}

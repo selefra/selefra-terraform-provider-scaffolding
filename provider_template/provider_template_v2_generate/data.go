@@ -11,7 +11,7 @@ var SelefraProviderTemplate string
 //go:embed selefra_provider_test.go.tpl
 var SelefraProviderTestTemplate string
 
-//go:embed selefra_provider_main/main.go.tpl
+//go:embed main.go.tpl
 var MainTemplate string
 
 //go:embed go.mod.tpl

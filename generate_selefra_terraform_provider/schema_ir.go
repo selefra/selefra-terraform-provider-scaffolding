@@ -10,7 +10,7 @@ import (
 	"github.com/selefra/selefra-provider-sdk/terraform/provider"
 	"github.com/yezihack/colorlog"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -62,30 +62,30 @@ func (x *SchemaIRManager) ReadOrGenerateSchemaIR(ctx context.Context) (*Terrafor
 }
 
 func (x *SchemaIRManager) GenTerraformProviderSchemaIR(ctx context.Context) (*TerraformProviderSchemaIR, error) {
-	colorlog.Info("begin start terraform provider bridge for %s ...", x.config.Terraform.TerraformProvider.ParseProviderName())
+	colorlog.Info("begin start terraform provider bridge for %s ...", x.config.Terraform.TerraformProvider.GetOrParseProviderName())
 	terraformProviderBridge, err := x.RunTerraformProvider(ctx)
 	if err != nil {
-		colorlog.Error("start terraform provider bridge for %s error: %s", x.config.Terraform.TerraformProvider.ParseProviderName(), err.Error())
+		colorlog.Error("start terraform provider bridge for %s error: %s", x.config.Terraform.TerraformProvider.GetOrParseProviderName(), err.Error())
 		return nil, err
 	}
-	colorlog.Info("start terraform provider bridge %s success", x.config.Terraform.TerraformProvider.ParseProviderName())
+	colorlog.Info("start terraform provider bridge %s success", x.config.Terraform.TerraformProvider.GetOrParseProviderName())
 	defer func() {
 		err := terraformProviderBridge.Shutdown()
 		if err != nil {
-			colorlog.Error("terraform provider bridge %s shutdown failed: %s", x.config.Terraform.TerraformProvider.ParseProviderName(), err.Error())
+			colorlog.Error("terraform provider bridge %s shutdown failed: %s", x.config.Terraform.TerraformProvider.GetOrParseProviderName(), err.Error())
 		} else {
-			colorlog.Info("terraform provider bridge %s shutdown success", x.config.Terraform.TerraformProvider.ParseProviderName())
+			colorlog.Info("terraform provider bridge %s shutdown success", x.config.Terraform.TerraformProvider.GetOrParseProviderName())
 		}
 	}()
-	return FromTerraformProviderSchema(x.config.Terraform.TerraformProvider.ParseProviderName(), terraformProviderBridge.GetProvider(), x.config), nil
+	return FromTerraformProviderSchema(x.config.Terraform.TerraformProvider.GetOrParseProviderName(), terraformProviderBridge.GetProvider(), x.config), nil
 }
 
 func (x *SchemaIRManager) RunTerraformProvider(ctx context.Context) (*bridge.TerraformBridge, error) {
-	providerExecFileSaveDirectory := path.Join(x.config.Output.Directory, "/bin/", x.config.Terraform.TerraformProvider.ParseProviderName())
-	colorlog.Info("begin download provider %s's exec file to %s", x.config.Terraform.TerraformProvider.ParseProviderName(), providerExecFileSaveDirectory)
+	providerExecFileSaveDirectory := filepath.Join(x.config.Output.Directory, "/bin/", x.config.Terraform.TerraformProvider.GetOrParseProviderName())
+	colorlog.Info("begin download provider %s's exec file to %s", x.config.Terraform.TerraformProvider.GetOrParseProviderName(), providerExecFileSaveDirectory)
 	providerExecFilePath, err := provider.NewProviderDownloader(x.config.Terraform.TerraformProvider.ExecuteFiles).Download(providerExecFileSaveDirectory)
 	if err != nil {
-		colorlog.Error("download provider %s's exec file failed: %s", x.config.Terraform.TerraformProvider.ParseProviderName(), err.Error())
+		colorlog.Error("download provider %s's exec file failed: %s", x.config.Terraform.TerraformProvider.GetOrParseProviderName(), err.Error())
 		return nil, err
 	}
 	terraformProviderBridge := bridge.NewTerraformBridge(providerExecFilePath)
@@ -98,20 +98,20 @@ func (x *SchemaIRManager) RunTerraformProvider(ctx context.Context) (*bridge.Ter
 			return nil, fmt.Errorf("json unmarshal terraform provider config error: %+v", err)
 		}
 	}
-	colorlog.Info("begin run bridge for provider %s...", x.config.Terraform.TerraformProvider.ParseProviderName())
+	colorlog.Info("begin run bridge for provider %s...", x.config.Terraform.TerraformProvider.GetOrParseProviderName())
 	err = terraformProviderBridge.StartBridge(ctx, providerConfig)
 	if err != nil {
-		colorlog.Error("run bridge for provider %s failed: %s", x.config.Terraform.TerraformProvider.ParseProviderName(), err.Error())
+		colorlog.Error("run bridge for provider %s failed: %s", x.config.Terraform.TerraformProvider.GetOrParseProviderName(), err.Error())
 		return nil, err
 	}
-	colorlog.Info("run bridge for provider %s success", x.config.Terraform.TerraformProvider.ParseProviderName())
+	colorlog.Info("run bridge for provider %s success", x.config.Terraform.TerraformProvider.GetOrParseProviderName())
 	return terraformProviderBridge, nil
 }
 
 func (x *SchemaIRManager) getTerraformSchemaIRSavePath() string {
-	schemaJsonOutputDirectory := path.Join(x.config.Output.Directory, "/provider")
+	schemaJsonOutputDirectory := filepath.Join(x.config.Output.Directory, "/provider")
 	_ = os.MkdirAll(schemaJsonOutputDirectory, os.ModePerm)
-	return path.Join(schemaJsonOutputDirectory, "/schema.json")
+	return filepath.Join(schemaJsonOutputDirectory, "/schema.json")
 }
 
 func (x *SchemaIRManager) saveTerraformSchemaIR(terraformProviderSchemaIR *TerraformProviderSchemaIR) error {
@@ -232,7 +232,7 @@ func (x *TerraformResourceSchemaIR) ToSelefraTableRenderParams(selefraModuleName
 	tableParams := &SelefraTableSchemaRenderParams{
 		TableSchemaGeneratorName: x.BuildTableSchemaGeneratorName(),
 		TableName:                x.ResourceName,
-		Description:              x.Description,
+		Description:              escapeStringForQuote(x.Description),
 		PrimaryKeys:              []string{"id"},
 		ModuleName:               selefraModuleName,
 	}
@@ -307,7 +307,7 @@ func (x *TerraformColumnSchemaIR) ToSelefraSchemaRenderParams() *SelefraColumnSc
 
 	selefraColumnRenderParams := &SelefraColumnSchemaRenderParams{
 		ColumnName:  x.ColumnName,
-		Description: x.Description,
+		Description: escapeStringForQuote(x.Description),
 	}
 
 	// column's type & column value extractor
