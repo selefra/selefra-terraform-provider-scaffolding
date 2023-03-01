@@ -26,7 +26,7 @@ func GetResource_{{$value.ResourceName}}() *selefra_terraform_schema.SelefraTerr
 	return &selefra_terraform_schema.SelefraTerraformResource{
 		SelefraTableName:      "{{$value.ResourceName}}",
 		TerraformResourceName: "{{$value.ResourceName}}",
-		Description:           "{{$value.Description}}",
+		Description:           {{$value.Description}},
 		SubTables:             nil,
 		ListResourceParamsFunc: func(ctx context.Context, clientMeta *schema.ClientMeta, taskClient any, task *schema.DataSourcePullTask, resultChannel chan<- any) ([]*ResourceRequestParam, *schema.Diagnostics) {
 			// TODO

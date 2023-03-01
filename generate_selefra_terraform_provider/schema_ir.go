@@ -232,7 +232,7 @@ func (x *TerraformResourceSchemaIR) ToSelefraTableRenderParams(selefraModuleName
 	tableParams := &SelefraTableSchemaRenderParams{
 		TableSchemaGeneratorName: x.BuildTableSchemaGeneratorName(),
 		TableName:                x.ResourceName,
-		Description:              escapeStringForQuote(x.Description),
+		Description:              processDescription(x.Description),
 		PrimaryKeys:              []string{"id"},
 		ModuleName:               selefraModuleName,
 	}
@@ -307,7 +307,7 @@ func (x *TerraformColumnSchemaIR) ToSelefraSchemaRenderParams() *SelefraColumnSc
 
 	selefraColumnRenderParams := &SelefraColumnSchemaRenderParams{
 		ColumnName:  x.ColumnName,
-		Description: escapeStringForQuote(x.Description),
+		Description: processDescription(x.Description),
 	}
 
 	// column's type & column value extractor

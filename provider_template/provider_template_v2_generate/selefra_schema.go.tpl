@@ -36,7 +36,7 @@ func TableSchemaGenerator_{{$table.TableName}}() (*schema.Table, *schema.Diagnos
 // {{$table.TableName}}
 func GetColumns_{{$table.TableName}}() []*schema.Column {
     return []*schema.Column{ {{range $index, $column := $table.ColumnSchemaSlice}}
-        table_schema_generator.NewColumnBuilder().ColumnName("{{$column.ColumnName}}").ColumnType({{$column.ColumnTypeCodeString}}){{if $column.Options.Unique}}.SetUnique(){{end}}{{if $column.Options.NotNull}}.SetNotNull(){{end}}{{if $column.Description}}.Description("{{$column.Description}}"){{end}}{{if $column.ExtractorInlineCodeString}}.
+        table_schema_generator.NewColumnBuilder().ColumnName("{{$column.ColumnName}}").ColumnType({{$column.ColumnTypeCodeString}}){{if $column.Options.Unique}}.SetUnique(){{end}}{{if $column.Options.NotNull}}.SetNotNull(){{end}}{{if $column.Description}}.Description({{$column.Description}}){{end}}{{if $column.ExtractorInlineCodeString}}.
         Extractor({{$column.ExtractorInlineCodeString}}){{end}}.Build(), {{end}}
     }
 }
