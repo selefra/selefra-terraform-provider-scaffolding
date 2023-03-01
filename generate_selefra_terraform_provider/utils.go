@@ -26,3 +26,29 @@ func escapeStringForQuote(s string) string {
 	}
 	return buff.String()
 }
+
+// ------------------------------------------------- --------------------------------------------------------------------
+
+func processDescription(s string) string {
+
+	if s == "" {
+		return ""
+	}
+
+	if strings.Contains(s, "`") {
+		buff := strings.Builder{}
+		buff.WriteRune('"')
+		buff.WriteString(escapeStringForQuote(s))
+		buff.WriteRune('"')
+		return buff.String()
+	} else {
+		//buff := strings.Builder{}
+		//buff.WriteRune('`')
+		//buff.WriteString(s)
+		//buff.WriteRune('`')
+		//return buff.String()
+		return "`" + s + "`"
+	}
+}
+
+// ------------------------------------------------- --------------------------------------------------------------------
