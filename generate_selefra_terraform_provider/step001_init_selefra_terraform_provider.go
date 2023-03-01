@@ -13,6 +13,7 @@ import (
 	"golang.org/x/tools/go/ast/astutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"text/template"
 )
@@ -117,6 +118,12 @@ func (x *SelefraTerraformProviderInit) RewriteResourcesGo() error {
 	newAddExistsCount := 0
 	resourceCodeBuff := bytes.Buffer{}
 	ignoredResourceNameSlice := make([]string, 0)
+
+	// sort by dictionary order
+	sort.Slice(terraformProviderSchemaIR.Resources, func(i, j int) bool {
+		return terraformProviderSchemaIR.Resources[i].ResourceName < terraformProviderSchemaIR.Resources[j].ResourceName
+	})
+
 	for _, terraformResourceSchemaIR := range terraformProviderSchemaIR.Resources {
 		if !x.config.IsResourceNeedGenerate(terraformResourceSchemaIR.ResourceName) {
 			continue
