@@ -103,6 +103,7 @@ func (x *SchemaGenerator) parseTableName(funcDecl *ast.FuncDecl) string {
 		recover()
 	}()
 
+	// TODO Improve accuracy and avoid misselection
 	s := funcDecl.Body.List[0].(*ast.ReturnStmt).Results[0].(*ast.UnaryExpr).X.(*ast.CompositeLit).Elts[0].(*ast.KeyValueExpr).Value.(*ast.BasicLit).Value
 	return strings.Trim(s, "\"")
 }
