@@ -21,6 +21,8 @@ func escapeStringForQuote(s string) string {
 	for index, char := range s {
 		if char == '"' && index > 0 && s[index-1] != '\\' {
 			buff.WriteString("\\")
+		} else if char == '\\' && index > 0 && s[index-1] != '\\' {
+			buff.WriteString("\\")
 		}
 		buff.WriteRune(char)
 	}
