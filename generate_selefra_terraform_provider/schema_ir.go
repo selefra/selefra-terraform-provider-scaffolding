@@ -254,7 +254,7 @@ func (x *TerraformResourceSchemaIR) ToSelefraTableRenderParams(selefraModuleName
 	// Add an additional column to store the original response data
 	tableParams.ColumnSchemaSlice = append(tableParams.ColumnSchemaSlice, &SelefraColumnSchemaRenderParams{
 		ColumnName:                "selefra_terraform_original_result",
-		Description:               "save terraform original result for compatibility",
+		Description:               "`save terraform original result for compatibility`",
 		ColumnTypeCodeString:      "schema.ColumnTypeJSON",
 		ExtractorInlineCodeString: "column_value_extractor.TerraformRawDataColumnValueExtractor()",
 	})
